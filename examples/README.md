@@ -1,6 +1,6 @@
 # 教学组件：使用说明
 
-使用 `teaching-components.html` 作为可复制正文片段。它只依赖 `framework/template.html` 中的样式；直接打开片段不会得到完整框架外观。完整预览由临时科目副本构建，不作为正式课程发布。
+使用 `teaching-components.html` 作为可复制正文片段。它只依赖 `framework/template.html` 中的样式；直接打开片段不会得到完整框架外观；要看完整效果，把片段粘进某个科目的 `content.html` 再构建。
 
 ## 选择与位置
 

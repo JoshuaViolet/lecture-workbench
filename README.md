@@ -1,25 +1,28 @@
 # lecture-workbench
 
-Turn lecture notes into a **single, self-contained HTML study guide** that works offline: double-click the file and you get highlights, margin notes, term cards, flashcards and practice questions, with no server, no CDN and no install.
+[![CI](https://github.com/JoshuaViolet/lecture-workbench/actions/workflows/ci.yml/badge.svg)](https://github.com/JoshuaViolet/lecture-workbench/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> Status: **early alpha**. I built this for my own university courses and am now extracting it into a reusable tool. The page UI is currently in Simplified Chinese. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for what is still broken and what is planned.
+Turn lecture notes into a **single, self-contained HTML study guide** that works offline. Double-click the file and you get highlights, margin notes, term cards, flashcards and practice questions: no server, no CDN, no install.
 
-## What you get
+**[Live demo](https://joshuaviolet.github.io/lecture-workbench/)** · [架构说明 / Architecture](docs/architecture.md) · [中文说明](README.zh-CN.md)
 
-A subject folder (`config.json` + `content.html` + `data.js`) builds into one `.html` file with:
+![A demo guide with a highlight across bold text, a margin note and a term card](docs/screenshot.png)
 
-- **Highlighter and margin notes** anchored to the text, saved in `localStorage`, exportable/importable as JSON and copyable as Markdown
-- **Term cards** on hover: IPA, stressed syllable chunks, etymology, a memory hook, and pronunciation through the Web Speech API
-- **Flashcards** (keyboard: Space / ← / →) and **multiple-choice questions** with explanations
-- **Teaching components** for structuring a lesson: chapter spine, evidence / limitation / misconception / transfer blocks, study cards
-- **Print mode** that forces a light theme and appends a self-test sheet (flashcards + MCQ answer key)
-- Dark mode, collapsible sidebar, reading progress, `focus-visible` and `prefers-reduced-motion` support
+> Status: **v0.1, early**. I built this for my own university courses and extracted it into a reusable tool. The page UI is in Simplified Chinese for now. Open problems are listed in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
-Each guide derives all of its `localStorage` keys from a per-subject `doc_id`, so many guides can be opened from the same origin without overwriting each other's notes.
+## Features
+
+- **Highlights and margin notes** that survive reloads, even when the selection crosses bold text or other inline markup. Stored per guide in `localStorage`; export/import as JSON, or copy as Markdown.
+- **Term cards** on hover: IPA, stressed syllables, etymology, a memory hook, and pronunciation through the Web Speech API.
+- **Flashcards** and **multiple-choice questions** with explanations. Options are shuffled on every render so the position of the answer can't be learned instead of the content.
+- **Teaching components** for structuring a lesson: chapter spine, evidence / limitation / misconception / transfer blocks, study cards.
+- **Print mode** that forces a light theme and appends a self-test sheet with the answer key.
+- Dark mode, collapsible sidebar, reading progress, keyboard support, `prefers-reduced-motion`.
 
 ## Quick start
 
-Requirements: Python 3.9+ and Node.js (the validator uses `node --check` and runs the term-card audit in Node).
+Requires Python 3.9+ and Node.js (the validator uses Node to syntax-check the page and audit term cards).
 
 ```bash
 git clone https://github.com/JoshuaViolet/lecture-workbench.git
@@ -28,58 +31,77 @@ python3 framework/build_guide.py --all --validate
 open subjects/demo-binary-search/Binary_Search_Demo.html
 ```
 
-To build one subject:
-
-```bash
-python3 framework/build_guide.py subjects/demo-binary-search --validate
-```
-
-## How it works
-
-```
-framework/
-  template.html        engine: all CSS, all runtime JS, HTML skeleton with {{PLACEHOLDERS}} and @@ZONE@@ markers
-  build_guide.py       fills the template from a subject folder and writes one HTML file
-  validate_guide.py    checks the generated file (see below)
-examples/
-  teaching-components.html   copy-paste snippets for the teaching blocks
-subjects/
-  demo-binary-search/  an original demo subject
-    config.json        doc_id, app_id, title, sidebar text, header_html, nav_html, output
-    content.html       the lesson body (<section>s inside <main>)
-    data.js            flashcards, mcqData, termLexicon
-```
-
-The build fails if any placeholder is left unfilled. The validator then checks the output:
-
-- every `href="#…"` anchor has a target, every `getElementById` has a static element, every inline handler has a function
-- HTML tags are balanced and the page script passes `node --check`
-- no raw LaTeX in visible text or data (the page has no math renderer)
-- every referenced image under `assets/` exists
-- every English term in `span.en` / `<strong>` has a term card, unless it is listed in the subject's `lexicon_allowlist.txt`
-
 ## Writing a subject
 
-Data shapes in `data.js` (field names are a fixed contract):
+A subject is a folder under `subjects/`:
 
-```js
-flashcards  : [{ front, back }]
-mcqData     : [{ q, opts[], ans, exp }]       // ans = 0-based index of the correct option
-termLexicon : [{ keys[], term, ipa, chunks, parts, hook }]
+```
+subjects/my-lecture/
+  config.json      identity, titles, header and table-of-contents HTML, output file name
+  content.html     the lesson body: <section>s with your text, figures and components
+  data.json        flashcards, mcqData, termLexicon
+  assets/          images referenced from content.html (optional)
 ```
 
-Bilingual terms in `content.html` get a hover card when written as:
+`config.json`:
+
+```json
+{
+  "doc_id": "my_lecture",
+  "app_id": "my-lecture-guide",
+  "title": "My Lecture",
+  "output": "My_Lecture.html",
+  "header_html": "<header class=\"doc-header\"><h1>My Lecture</h1></header>",
+  "nav_html": "<li><a href=\"#intro\">Introduction</a></li>"
+}
+```
+
+`doc_id` namespaces everything the guide stores, so it must be unique across your guides and must not change after you start using a guide.
+
+`data.json` (checked at build time; errors point at the exact item and field):
+
+```json
+{
+  "flashcards":  [{ "front": "…", "back": "…" }],
+  "mcqData":     [{ "q": "…", "opts": ["…", "…", "…", "…"], "ans": 2, "exp": "…" }],
+  "termLexicon": [{ "keys": ["binary search"], "term": "Binary search 二分查找",
+                    "ipa": "/ˈbaɪnəri sɜːtʃ/", "chunks": "BI-na-ry SEARCH",
+                    "parts": "…", "hook": "…" }]
+}
+```
+
+`ans` is the 0-based index of the correct option in `opts`. Add `"shuffle": false` to a question whose options must stay in order. A term in `content.html` gets a hover card when it is written as
 
 ```html
 <span class="term"><span class="en">Binary search</span> <span class="zh">(二分查找)</span></span>
 ```
 
-Pick a `doc_id` that is unique across all your guides and never change it afterwards: it namespaces the stored highlights and notes.
+or as `<strong>…</strong>` text that matches one of the `keys`. Copy-paste snippets for the teaching components are in [examples/](examples/).
+
+Coming from the older `data.js` format: `python3 framework/migrate_datajs.py subjects/<name>`.
+
+## Validation
+
+`build_guide.py --validate` (or `validate_guide.py <guide.html>`) checks the generated page:
+
+| Check | Catches |
+|---|---|
+| structure | broken `#anchors`, `getElementById` targets that don't exist, undefined inline handlers, unbalanced tags, unfilled placeholders, script syntax errors |
+| content | raw LaTeX (there is no math renderer), missing images, English terms with no term card |
+| teaching-quality lint | the correct option being the longest one in most questions, answers clustered on one letter, duplicate questions |
+
+Lint findings are warnings; `--strict` turns them into failures.
+
+## Development
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m playwright install chromium   # or set PW_CHANNEL=chrome to use an installed Chrome
+.venv/bin/pytest
+```
+
+The suite has unit tests for the builder and validator, and Playwright tests that open the built demo from `file://` and drive it like a student: select text, click the toolbar, reload, export and import a backup.
 
 ## License
 
 [MIT](LICENSE)
-
----
-
-中文简介：把讲义变成离线可用的单文件交互式学习页（高亮、批注、术语卡、抽认卡、选择题、打印自测）。目前处于早期版本，界面为简体中文。
