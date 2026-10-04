@@ -52,3 +52,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 ## 许可证
 
 [MIT](LICENSE)
+
+## 致谢
+
+开发过程中使用了 AI 辅助（Claude）。

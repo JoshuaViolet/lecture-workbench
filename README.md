@@ -105,3 +105,7 @@ The suite has unit tests for the builder and validator, and Playwright tests tha
 ## License
 
 [MIT](LICENSE)
+
+## Acknowledgments
+
+Developed with AI assistance (Claude).
