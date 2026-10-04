@@ -1281,14 +1281,14 @@
             if (html.getAttribute("data-theme") === "dark") {
                 html.setAttribute("data-theme", "light");
                 btn.textContent = "🌙 暗色";
-                localStorage.setItem(LS.theme, "light");
+                lsSet(LS.theme, "light");
             } else {
                 html.setAttribute("data-theme", "dark");
                 btn.textContent = "☀️ 亮色";
-                localStorage.setItem(LS.theme, "dark");
+                lsSet(LS.theme, "dark");
             }
         }
-        if (localStorage.getItem(LS.theme) === "dark") {
+        if (lsGet(LS.theme) === "dark") {
             document.documentElement.setAttribute("data-theme", "dark");
             document.getElementById("theme-toggle-btn").textContent = "☀️ 亮色";
         }
@@ -1512,7 +1512,7 @@
                 } else {
                     isCollapsed = body.classList.toggle("sidebar-collapsed");
                 }
-                localStorage.setItem(LS.sidebar, isCollapsed ? "true" : "false");
+                lsSet(LS.sidebar, isCollapsed ? "true" : "false");
                 if (pillIcon && pillText) {
                     pillIcon.textContent = isCollapsed ? "☰" : "◀";
                     pillText.textContent = isCollapsed ? "展开目录" : "收起目录";
@@ -1537,7 +1537,7 @@
         });
 
         // Restore sidebar state from localStorage
-        if (window.innerWidth > 900 && localStorage.getItem(LS.sidebar) === "true") {
+        if (window.innerWidth > 900 && lsGet(LS.sidebar) === "true") {
             document.body.classList.add("sidebar-collapsed");
             const pillIcon = document.getElementById("sidebar-pill-icon");
             const pillText = document.getElementById("sidebar-pill-text");
@@ -1548,8 +1548,21 @@
         }
 
         // ==========================================
-        // SINGLE-COLOR ACADEMIC HIGHLIGHTER WITH ROBUST PERSISTENCE
+        // HIGHLIGHTS AND MARGIN NOTES
+        //
+        // An annotation is stored as { id, cIdx, start, end, text, prefix, suffix }:
+        //   cIdx         index of its block (p, li, td, ...) among all blocks in <main>
+        //   start, end   character offsets into that block's text
+        //   text         the exact annotated text, with up to CONTEXT_CHARS of prefix/suffix
+        // Restoring trusts the offsets only while they still yield `text`; otherwise it
+        // searches every block for `text` and keeps the occurrence whose context matches best
+        // (the same idea as the W3C Web Annotation TextPosition + TextQuote selectors).
+        // The range may cross inline markup such as <strong> or term spans: every text node
+        // in it gets its own wrapper element, and all wrappers share the annotation's id.
+        // Records from older versions ({ cIdx, text } only) restore through the search path.
         // ==========================================
+        const BLOCK_SELECTOR = "p, li, td, th, div.quiz-q, div.quiz-a, figcaption, blockquote, h2, h3, h4";
+        const CONTEXT_CHARS = 32;
         let selectedRange = null;
         let activeHighlightEl = null;
 
@@ -1560,6 +1573,163 @@
             return Array.from(document.querySelectorAll("#main-content p, #main-content li, #main-content td, #main-content th, #main-content div.quiz-q, #main-content div.quiz-a, #main-content figcaption, #main-content blockquote, #main-content h2, #main-content h3, #main-content h4"));
         }
 
+        // ---------- storage: never let a bad or unavailable localStorage stop the page ----------
+        function lsGet(key) {
+            try { return localStorage.getItem(key); } catch (e) { return null; }
+        }
+        function lsSet(key, value) {
+            try { localStorage.setItem(key, value); return true; } catch (e) { return false; }
+        }
+        function readList(key) {
+            const raw = lsGet(key);
+            if (!raw) return [];
+            try {
+                const value = JSON.parse(raw);
+                if (Array.isArray(value)) return value;
+            } catch (e) { /* fall through */ }
+            // keep the unreadable value instead of overwriting it on the next save
+            if (lsGet(key + "_unreadable") === null) lsSet(key + "_unreadable", raw);
+            return [];
+        }
+        function writeList(key, list) {
+            if (!lsSet(key, JSON.stringify(list))) {
+                showToast("⚠️ 浏览器存储不可用或已满，本次修改未保存。请导出备份。");
+                return false;
+            }
+            return true;
+        }
+        function newId(prefix) {
+            return prefix + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+        }
+        function byId(attr, id) {
+            return `[${attr}="${CSS.escape(String(id))}"]`;
+        }
+
+        // ---------- text model ----------
+        // Text nodes that count toward offsets: everything except the 💬 flags this engine adds.
+        function anchorTextNodes(block) {
+            const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+                acceptNode: n => (n.parentElement && n.parentElement.closest(".note-flag"))
+                    ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+            });
+            const nodes = [];
+            while (walker.nextNode()) nodes.push(walker.currentNode);
+            return nodes;
+        }
+
+        function blockText(block) {
+            return anchorTextNodes(block).map(n => n.nodeValue).join("");
+        }
+
+        // Character offset, within block's text, of the DOM boundary point (node, offset).
+        function offsetInBlock(block, node, offset) {
+            const point = document.createRange();
+            point.setStart(node, offset);
+            let pos = 0;
+            for (const t of anchorTextNodes(block)) {
+                if (t === node) return pos + offset;
+                if (point.comparePoint(t, t.nodeValue.length) > 0) break;   // t ends after the point
+                pos += t.nodeValue.length;
+            }
+            return pos;
+        }
+
+        // Turn a selection range into an anchor inside one block, or say why it cannot be.
+        function anchorFromRange(range) {
+            const startEl = range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer;
+            const block = startEl && startEl.closest(BLOCK_SELECTOR);
+            if (!block || !document.getElementById("main-content").contains(block)) return { error: "unsupported" };
+            const text = blockText(block);
+            const endsInside = block.contains(range.endContainer);
+            let start = offsetInBlock(block, range.startContainer, range.startOffset);
+            let end = endsInside ? offsetInBlock(block, range.endContainer, range.endOffset) : text.length;
+            while (start < end && /\s/.test(text[start])) start++;
+            while (end > start && /\s/.test(text[end - 1])) end--;
+            if (start >= end) return { error: "empty" };
+            const kept = text.slice(start, end);
+            // a selection running into the next paragraph keeps only the part in this block
+            const clipped = !endsInside && range.toString().replace(/\s+/g, "").length > kept.replace(/\s+/g, "").length;
+            return {
+                block: block,
+                clipped: clipped,
+                anchor: {
+                    cIdx: getAllTextContainers().indexOf(block),
+                    start: start,
+                    end: end,
+                    text: kept,
+                    prefix: text.slice(Math.max(0, start - CONTEXT_CHARS), start),
+                    suffix: text.slice(end, end + CONTEXT_CHARS)
+                }
+            };
+        }
+
+        // Find where a stored anchor is now. `texts` caches blockText for each block.
+        function locateAnchor(item, blocks, texts) {
+            if (!item || typeof item.text !== "string" || !item.text) return null;
+            const home = Number.isInteger(item.cIdx) ? item.cIdx : -1;
+            if (blocks[home] && Number.isInteger(item.start) && Number.isInteger(item.end)
+                && texts[home].slice(item.start, item.end) === item.text) {
+                return { block: blocks[home], start: item.start, end: item.end };
+            }
+            let best = null;
+            for (let b = 0; b < blocks.length; b++) {
+                const t = texts[b];
+                for (let i = t.indexOf(item.text); i !== -1; i = t.indexOf(item.text, i + 1)) {
+                    const after = i + item.text.length;
+                    let score = b === home ? 1 : 0;
+                    if (item.prefix && t.slice(Math.max(0, i - item.prefix.length), i) === item.prefix) score += 2;
+                    if (item.suffix && t.slice(after, after + item.suffix.length) === item.suffix) score += 2;
+                    if (!best || score > best.score) best = { block: blocks[b], start: i, end: after, score: score };
+                }
+            }
+            return best;
+        }
+
+        // Wrap block text [start, end) using makeWrapper(); returns the wrapper elements.
+        function wrapTextRange(block, start, end, makeWrapper) {
+            const wrappers = [];
+            let pos = 0;
+            for (const node of anchorTextNodes(block)) {
+                const nodeStart = pos;
+                const len = node.nodeValue.length;
+                pos += len;
+                if (pos <= start) continue;
+                if (nodeStart >= end) break;
+                let piece = node;
+                const from = Math.max(start - nodeStart, 0);
+                const to = Math.min(end - nodeStart, len);
+                if (from > 0) piece = piece.splitText(from);
+                if (to - from < piece.nodeValue.length) piece.splitText(to - from);
+                if (!piece.nodeValue.trim()) continue;   // whitespace between inline elements
+                const wrapper = makeWrapper();
+                piece.parentNode.insertBefore(wrapper, piece);
+                wrapper.appendChild(piece);
+                wrappers.push(wrapper);
+            }
+            return wrappers;
+        }
+
+        function unwrapAll(selector) {
+            document.querySelectorAll(selector).forEach(el => {
+                const parent = el.parentNode;
+                while (el.firstChild) parent.insertBefore(el.firstChild, el);
+                parent.removeChild(el);
+                parent.normalize();
+            });
+        }
+
+        function restoreAnnotations(items, attr, wrap) {
+            const valid = items.filter(item => item && item.id && !document.querySelector(byId(attr, item.id)));
+            if (!valid.length) return;
+            const blocks = getAllTextContainers();
+            const texts = blocks.map(blockText);   // wrapping never changes the text, so this stays valid
+            valid.forEach(item => {
+                const at = locateAnchor(item, blocks, texts);
+                if (at) wrap(at.block, at.start, at.end, item.id);
+            });
+        }
+
+        // ---------- selection toolbar ----------
         function handleSelection() {
             const selection = window.getSelection();
             const toolbar = document.getElementById("text-selection-toolbar");
@@ -1581,7 +1751,8 @@
                 return;
             }
 
-            selectedRange = range;
+            // copy it: the selection's own range changes as soon as focus moves to the note editor
+            selectedRange = range.cloneRange();
             activeHighlightEl = null;
             addBtn.style.display = "inline-flex";
             removeBtn.style.display = "none";
@@ -1634,114 +1805,55 @@
             toolbar.style.left = Math.min(Math.max(10, left), Math.max(10, maxLeft)) + "px";
         }
 
-        function applyHighlight() {
-            if (!selectedRange) return;
-            const text = selectedRange.toString().trim();
-            if (!text) return;
-
-            const containers = getAllTextContainers();
-            const startContainer = selectedRange.startContainer.nodeType === 3 ? selectedRange.startContainer.parentElement : selectedRange.startContainer;
-            const containerBlock = startContainer.closest("p, li, td, th, div.quiz-q, div.quiz-a, figcaption, blockquote, h2, h3, h4");
-
-            if (!containerBlock) {
-                showToast("⚠️ 该区域（如按钮/选项）暂不支持高亮标注。");
-                return;
-            }
-            const cIdx = containers.indexOf(containerBlock);
-            const hlId = "hl_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-
-            let success = false;
-            try {
-                const mark = document.createElement("mark");
-                mark.className = "user-hl";
-                mark.dataset.hlId = hlId;
-                selectedRange.surroundContents(mark);
-                success = true;
-            } catch (err) {
-                success = highlightTextInElement(containerBlock, text, hlId);
-            }
-
-            if (success) {
-                const saved = JSON.parse(localStorage.getItem(LS.highlights) || "[]");
-                saved.push({ id: hlId, cIdx: cIdx, text: text });
-                localStorage.setItem(LS.highlights, JSON.stringify(saved));
-                showToast("🖍️ 已添加荧光黄色高亮（已自动保存）！");
-            } else {
-                showToast("⚠️ 选区跨越复杂排版，无法高亮——请尝试缩短划选范围。");
-            }
-
-            window.getSelection().removeAllRanges();
+        function clearSelectionUI() {
+            const sel = window.getSelection();
+            if (sel) sel.removeAllRanges();
             document.getElementById("text-selection-toolbar").style.display = "none";
             selectedRange = null;
         }
 
-        function removeHighlightAtSelection() {
-            if (activeHighlightEl) {
-                const id = activeHighlightEl.dataset.hlId;
-                const text = activeHighlightEl.textContent;
-                const parent = activeHighlightEl.parentNode;
-                while (activeHighlightEl.firstChild) {
-                    parent.insertBefore(activeHighlightEl.firstChild, activeHighlightEl);
-                }
-                parent.removeChild(activeHighlightEl);
-                parent.normalize();
+        // ---------- highlights ----------
+        function wrapHighlight(block, start, end, id) {
+            return wrapTextRange(block, start, end, () => {
+                const mark = document.createElement("mark");
+                mark.className = "user-hl";
+                mark.dataset.hlId = id;
+                return mark;
+            });
+        }
 
-                let saved = JSON.parse(localStorage.getItem(LS.highlights) || "[]");
-                saved = saved.filter(h => h.id !== id);
-                localStorage.setItem(LS.highlights, JSON.stringify(saved));
-
-                document.getElementById("text-selection-toolbar").style.display = "none";
-                activeHighlightEl = null;
-                showToast("🗑️ 已清除高亮标注！");
+        function applyHighlight() {
+            if (!selectedRange) return;
+            const res = anchorFromRange(selectedRange);
+            clearSelectionUI();
+            if (res.error) {
+                showToast(res.error === "unsupported" ? "⚠️ 该区域（如按钮/选项）暂不支持高亮标注。" : "⚠️ 没有选中文字。");
+                return;
+            }
+            const id = newId("hl");
+            if (!wrapHighlight(res.block, res.anchor.start, res.anchor.end, id).length) {
+                showToast("⚠️ 没有可高亮的文字。");
+                return;
+            }
+            const saved = readList(LS.highlights);
+            saved.push(Object.assign({ id: id }, res.anchor));
+            if (writeList(LS.highlights, saved)) {
+                showToast(res.clipped ? "🖍️ 已高亮并保存（跨段落的选区只保留了第一段）" : "🖍️ 已添加荧光黄色高亮（已自动保存）！");
             }
         }
 
-        function highlightTextInElement(element, text, hlId) {
-            if (!element || !text) return false;
-            if (element.querySelector(`[data-hl-id="${hlId}"]`)) return true;
-
-            const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
-            let node;
-            const textNodes = [];
-
-            while ((node = walker.nextNode())) {
-                if (!node.parentElement.closest(".user-hl") && node.nodeValue.includes(text)) {
-                    textNodes.push(node);
-                }
-            }
-
-            for (const textNode of textNodes) {
-                const idx = textNode.nodeValue.indexOf(text);
-                if (idx !== -1) {
-                    const targetNode = textNode.splitText(idx);
-                    targetNode.splitText(text.length);
-
-                    const mark = document.createElement("mark");
-                    mark.className = "user-hl";
-                    mark.dataset.hlId = hlId;
-                    targetNode.parentNode.insertBefore(mark, targetNode);
-                    mark.appendChild(targetNode);
-                    return true;
-                }
-            }
-            return false;
+        function removeHighlightAtSelection() {
+            if (!activeHighlightEl) return;
+            const id = activeHighlightEl.dataset.hlId;
+            unwrapAll("mark.user-hl" + byId("data-hl-id", id));
+            writeList(LS.highlights, readList(LS.highlights).filter(h => h.id !== id));
+            document.getElementById("text-selection-toolbar").style.display = "none";
+            activeHighlightEl = null;
+            showToast("🗑️ 已清除高亮标注！");
         }
 
         function restoreHighlights() {
-            const saved = JSON.parse(localStorage.getItem(LS.highlights) || "[]");
-            if (!saved.length) return;
-
-            const containers = getAllTextContainers();
-            saved.forEach(item => {
-                let targetContainer = containers[item.cIdx];
-                // cIdx can drift if the document structure changed — verify the text is really there
-                if ((!targetContainer || (item.text && !targetContainer.textContent.includes(item.text))) && item.text) {
-                    targetContainer = containers.find(c => c.textContent.includes(item.text));
-                }
-                if (targetContainer) {
-                    highlightTextInElement(targetContainer, item.text, item.id);
-                }
-            });
+            restoreAnnotations(readList(LS.highlights), "data-hl-id", wrapHighlight);
         }
 
         // ==========================================
@@ -1752,16 +1864,27 @@
         let pendingNoteRange = null;
 
         function loadNotes() {
-            try { notesCache = JSON.parse(localStorage.getItem(LS.notes) || "[]"); }
-            catch (e) { notesCache = []; }
+            notesCache = readList(LS.notes);
         }
         function saveNotes() {
-            localStorage.setItem(LS.notes, JSON.stringify(notesCache));
+            const ok = writeList(LS.notes, notesCache);
             updateNoteCount();
+            return ok;
         }
         function updateNoteCount() {
             const el = document.getElementById("note-count");
             if (el) el.textContent = notesCache.length;
+        }
+
+        function wrapNote(block, start, end, id) {
+            const pieces = wrapTextRange(block, start, end, () => {
+                const span = document.createElement("span");
+                span.className = "note-anchor";
+                span.dataset.noteId = id;
+                return span;
+            });
+            if (pieces.length) appendNoteFlag(pieces[pieces.length - 1], id);
+            return pieces;
         }
 
         // Called from the selection toolbar ("📝 批注" button)
@@ -1787,7 +1910,7 @@
             document.getElementById("note-editor-text").value = n.note;
             document.getElementById("note-delete-btn").style.display = "";
             document.getElementById("text-selection-toolbar").style.display = "none";
-            const anchor = document.querySelector(`[data-note-id="${noteId}"]`);
+            const anchor = document.querySelector(".note-anchor" + byId("data-note-id", noteId));
             if (anchor) showNoteEditorAt(anchor.getBoundingClientRect());
         }
 
@@ -1816,46 +1939,33 @@
             // Edit path: update in place, no DOM re-anchoring needed
             if (editingNoteId) {
                 const n = notesCache.find(x => x.id === editingNoteId);
-                if (n) { n.note = noteText; n.ts = Date.now(); saveNotes(); showToast("💾 批注已更新！"); }
+                if (n) {
+                    n.note = noteText;
+                    n.ts = Date.now();
+                    if (saveNotes()) showToast("💾 批注已更新！");
+                }
                 closeNoteEditor();
                 return;
             }
 
-            // Create path: wrap the selected text with a note anchor
+            // Create path: anchor the selected text
             if (!pendingNoteRange) { closeNoteEditor(); return; }
-            const text = pendingNoteRange.toString().trim();
-            const containers = getAllTextContainers();
-            const startContainer = pendingNoteRange.startContainer.nodeType === 3 ? pendingNoteRange.startContainer.parentElement : pendingNoteRange.startContainer;
-            const containerBlock = startContainer.closest("p, li, td, th, div.quiz-q, div.quiz-a, figcaption, blockquote, h2, h3, h4");
-            if (!containerBlock) {
-                showToast("⚠️ 该区域（如按钮/选项）暂不支持批注。");
+            const res = anchorFromRange(pendingNoteRange);
+            clearSelectionUI();
+            if (res.error) {
+                showToast(res.error === "unsupported" ? "⚠️ 该区域（如按钮/选项）暂不支持批注。" : "⚠️ 没有选中文字。");
                 closeNoteEditor();
                 return;
             }
-            const cIdx = containers.indexOf(containerBlock);
-            const noteId = "note_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
-
-            let success = false;
-            try {
-                const span = document.createElement("span");
-                span.className = "note-anchor";
-                span.dataset.noteId = noteId;
-                pendingNoteRange.surroundContents(span);
-                appendNoteFlag(span, noteId);
-                success = true;
-            } catch (err) {
-                success = wrapNoteAnchorInElement(containerBlock, text, noteId);
-            }
-
-            if (success) {
-                notesCache.push({ id: noteId, cIdx: cIdx, text: text, note: noteText, ts: Date.now() });
-                saveNotes();
-                showToast("📝 批注已保存（请定期从左侧目录底部导出备份）！");
+            const id = newId("note");
+            if (wrapNote(res.block, res.anchor.start, res.anchor.end, id).length) {
+                notesCache.push(Object.assign({ id: id }, res.anchor, { note: noteText, ts: Date.now() }));
+                if (saveNotes()) {
+                    showToast(res.clipped ? "📝 批注已保存（跨段落的选区只保留了第一段）" : "📝 批注已保存（请定期从左侧目录底部导出备份）！");
+                }
             } else {
-                showToast("⚠️ 选区跨越复杂排版，无法批注——请缩短划选范围。");
+                showToast("⚠️ 没有可批注的文字。");
             }
-            window.getSelection().removeAllRanges();
-            selectedRange = null;
             closeNoteEditor();
         }
 
@@ -1864,15 +1974,8 @@
             const id = editingNoteId;
             notesCache = notesCache.filter(n => n.id !== id);
             saveNotes();
-            const anchor = document.querySelector(`[data-note-id="${id}"]`);
-            if (anchor) {
-                const parent = anchor.parentNode;
-                const flag = anchor.querySelector(".note-flag");
-                if (flag) flag.remove();
-                while (anchor.firstChild) parent.insertBefore(anchor.firstChild, anchor);
-                parent.removeChild(anchor);
-                parent.normalize();
-            }
+            document.querySelectorAll(".note-flag" + byId("data-note-id", id)).forEach(f => f.remove());
+            unwrapAll(".note-anchor" + byId("data-note-id", id));
             showToast("🗑️ 批注已删除！");
             closeNoteEditor();
         }
@@ -1880,93 +1983,68 @@
         function appendNoteFlag(span, noteId) {
             const flag = document.createElement("sup");
             flag.className = "note-flag";
-            flag.textContent = "\uD83D\uDCAC";
+            flag.textContent = "💬";
             flag.dataset.noteId = noteId;
             flag.title = "查看/编辑批注";
             span.appendChild(flag);
         }
 
-        function wrapNoteAnchorInElement(element, text, noteId) {
-            if (!element || !text) return false;
-            if (element.querySelector(`[data-note-id="${noteId}"]`)) return true;
-            const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
-            let node;
-            const textNodes = [];
-            while ((node = walker.nextNode())) {
-                if (!node.parentElement.closest(".note-anchor") && !node.parentElement.closest(".note-flag") && node.nodeValue.includes(text)) {
-                    textNodes.push(node);
-                }
-            }
-            for (const textNode of textNodes) {
-                const idx = textNode.nodeValue.indexOf(text);
-                if (idx !== -1) {
-                    const targetNode = textNode.splitText(idx);
-                    targetNode.splitText(text.length);
-                    const span = document.createElement("span");
-                    span.className = "note-anchor";
-                    span.dataset.noteId = noteId;
-                    targetNode.parentNode.insertBefore(span, targetNode);
-                    span.appendChild(targetNode);
-                    appendNoteFlag(span, noteId);
-                    return true;
-                }
-            }
-            return false;
-        }
-
         function restoreNotes() {
-            if (!notesCache.length) return;
-            const containers = getAllTextContainers();
-            notesCache.forEach(item => {
-                let targetContainer = containers[item.cIdx];
-                // same cIdx-drift safety net as highlights: verify text, else fall back to search
-                if ((!targetContainer || (item.text && !targetContainer.textContent.includes(item.text))) && item.text) {
-                    targetContainer = containers.find(c => c.textContent.includes(item.text));
-                }
-                if (targetContainer) wrapNoteAnchorInElement(targetContainer, item.text, item.id);
-            });
+            restoreAnnotations(notesCache, "data-note-id", wrapNote);
         }
 
         // ---------- Study Data Export / Import / Markdown ----------
         function exportStudyData() {
             const data = {
                 app: APP_ID,
-                version: 1,
+                version: 2,
                 exportedAt: new Date().toISOString(),
-                highlights: JSON.parse(localStorage.getItem(LS.highlights) || "[]"),
-                notes: JSON.parse(localStorage.getItem(LS.notes) || "[]")
+                highlights: readList(LS.highlights),
+                notes: readList(LS.notes)
             };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
+            a.href = url;
             a.download = APP_ID + "_backup_" + new Date().toISOString().slice(0, 10) + ".json";
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(a.href);
+            // revoking right away can cancel the download in some browsers
+            setTimeout(() => URL.revokeObjectURL(url), 10000);
             showToast("📤 已导出高亮与批注备份文件！");
+        }
+
+        function isAnnotation(x) {
+            return x && typeof x === "object" && typeof x.id === "string" && typeof x.text === "string" && x.text;
         }
 
         function importStudyData(file) {
             if (!file) return;
             const reader = new FileReader();
             reader.onload = () => {
+                let data;
                 try {
-                    const data = JSON.parse(reader.result);
-                    if (!data || (!Array.isArray(data.highlights) && !Array.isArray(data.notes))) {
-                        throw new Error("bad format");
-                    }
-                    // 框架化：跨文档备份指纹校验（旧备份无 app 字段时放行，保持原行为）
-                    if (data.app && data.app !== APP_ID) {
-                        if (!confirm("⚠️ 这份备份来自另一个文档（" + data.app + "）。\n导入它可能导致高亮/批注错位。\n仍要继续吗？")) return;
-                    }
-                    if (Array.isArray(data.highlights)) localStorage.setItem(LS.highlights, JSON.stringify(data.highlights));
-                    if (Array.isArray(data.notes)) localStorage.setItem(LS.notes, JSON.stringify(data.notes));
-                    showToast("📥 导入成功，正在刷新页面...");
-                    setTimeout(() => location.reload(), 900);
+                    data = JSON.parse(reader.result);
                 } catch (e) {
-                    showToast("⚠️ 导入失败：文件格式不正确。");
+                    showToast("⚠️ 导入失败：文件不是有效的 JSON。");
+                    return;
                 }
+                if (!data || (!Array.isArray(data.highlights) && !Array.isArray(data.notes))) {
+                    showToast("⚠️ 导入失败：文件里没有高亮或批注。");
+                    return;
+                }
+                // backups carry the guide's app id; older backups without one are accepted
+                if (data.app && data.app !== APP_ID) {
+                    if (!confirm("⚠️ 这份备份来自另一个文档（" + data.app + "）。\n导入它可能导致高亮/批注错位。\n仍要继续吗？")) return;
+                }
+                const hls = (data.highlights || []).filter(isAnnotation);
+                const notes = (data.notes || []).filter(n => isAnnotation(n) && typeof n.note === "string");
+                const ok = (!Array.isArray(data.highlights) || writeList(LS.highlights, hls))
+                    && (!Array.isArray(data.notes) || writeList(LS.notes, notes));
+                if (!ok) return;
+                showToast("📥 已导入 " + hls.length + " 条高亮、" + notes.length + " 条批注，正在刷新页面...");
+                setTimeout(() => location.reload(), 900);
             };
             reader.readAsText(file);
         }
@@ -1979,8 +2057,8 @@
         }
 
         function copyNotesAsMarkdown() {
-            const notes = JSON.parse(localStorage.getItem(LS.notes) || "[]");
-            const hls = JSON.parse(localStorage.getItem(LS.highlights) || "[]");
+            const notes = readList(LS.notes);
+            const hls = readList(LS.highlights);
             if (!notes.length && !hls.length) { showToast("⚠️ 还没有任何批注或高亮。"); return; }
 
             let md = "# " + GUIDE_TITLE + " · 我的批注与高亮\n\n";
@@ -1989,7 +2067,7 @@
             if (notes.length) {
                 md += "## 📝 我的批注（" + notes.length + " 条）\n\n";
                 notes.forEach((n, i) => {
-                    const ch = chapterTitleFor(`[data-note-id="${n.id}"]`);
+                    const ch = chapterTitleFor(".note-anchor" + byId("data-note-id", n.id));
                     md += "### 批注 " + (i + 1) + (ch ? "｜" + ch : "") + "\n\n";
                     md += "> 原文：" + n.text + "\n\n";
                     md += n.note + "\n\n";
