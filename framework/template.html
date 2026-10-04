@@ -1376,6 +1376,19 @@
         let userScore = 0;
         let answeredQuestions = new Set();
 
+        // Options are shuffled on every render, so neither the authored position of the
+        // answer nor any habit of the author (e.g. "it's usually B") can be learned
+        // instead of the material. A question can opt out with "shuffle": false.
+        function optionOrder(item) {
+            const order = item.opts.map((_, i) => i);
+            if (item.shuffle === false) return order;
+            for (let i = order.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [order[i], order[j]] = [order[j], order[i]];
+            }
+            return order;
+        }
+
         function initMCQ() {
             const container = document.getElementById("mcq-app");
             if (!container) return;   // practice widgets are optional
@@ -1393,11 +1406,12 @@
                 const optsDiv = document.createElement("div");
                 optsDiv.className = "mcq-options";
 
-                item.opts.forEach((opt, oIdx) => {
+                optionOrder(item).forEach(oIdx => {
                     const optBtn = document.createElement("button");
                     optBtn.className = "mcq-opt";
-                    optBtn.textContent = opt;
-                    optBtn.onclick = () => selectOption(qIdx, oIdx, item.ans, optBtn);
+                    optBtn.textContent = item.opts[oIdx];
+                    optBtn.dataset.opt = oIdx;   // index in the authored order
+                    optBtn.onclick = () => selectOption(qIdx, oIdx, optBtn);
                     optsDiv.appendChild(optBtn);
                 });
 
@@ -1413,7 +1427,8 @@
             });
         }
 
-        function selectOption(qIdx, selectedIdx, correctIdx, btn) {
+        function selectOption(qIdx, selectedIdx, btn) {
+            const correctIdx = mcqData[qIdx].ans;
             if (answeredQuestions.has(qIdx)) return;
             answeredQuestions.add(qIdx);
 
@@ -1426,7 +1441,7 @@
                 userScore++;
             } else {
                 btn.classList.add("incorrect");
-                allOpts[correctIdx].classList.add("correct");
+                card.querySelector(`.mcq-opt[data-opt="${correctIdx}"]`).classList.add("correct");
             }
 
             setText("mcq-score", userScore);
@@ -1440,6 +1455,10 @@
             setText("mcq-score", 0);
             setText("mcq-done", 0);
             initMCQ();
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
 
         function setText(id, value) {
@@ -2150,15 +2169,15 @@
         // ==========================================
         function buildPrintSheet() {
             document.querySelectorAll("#print-sheet").forEach(el => el.remove());
-            const letters = ["A", "B", "C", "D"];
             let html = '<h2>附录：自测清单（打印专用）</h2>';
             html += '<h3>抽认卡 Q→A（共 ' + flashcards.length + ' 张）</h3><ol>';
             flashcards.forEach(c => {
-                html += '<li style="margin-bottom:8px;"><strong>Q:</strong> ' + c.front + '<br><strong>A:</strong> ' + c.back + '</li>';
+                html += '<li style="margin-bottom:8px;"><strong>Q:</strong> ' + escapeHtml(c.front) + '<br><strong>A:</strong> ' + escapeHtml(c.back) + '</li>';
             });
             html += '</ol><h3>MCQ 答案速查（共 ' + mcqData.length + ' 题）</h3><ol>';
             mcqData.forEach(m => {
-                html += '<li style="margin-bottom:8px;">' + m.q + '<br><strong>✓ ' + letters[m.ans] + '.</strong> ' + m.opts[m.ans] + '<br><span style="color:#444;">' + m.exp + '</span></li>';
+                // options are shuffled on screen, so print the answer text rather than a letter
+                html += '<li style="margin-bottom:8px;">' + escapeHtml(m.q) + '<br><strong>✓</strong> ' + escapeHtml(m.opts[m.ans]) + '<br><span style="color:#444;">' + m.exp + '</span></li>';
             });
             html += '</ol>';
             const sheet = document.createElement("div");
