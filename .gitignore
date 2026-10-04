@@ -1,0 +1,15 @@
+# macOS / editors
+.DS_Store
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.ruff_cache/
+.venv/
+
+# Generated guides: every subject builds to its own <output>.html.
+# Only content.html is source; everything else *.html under subjects/ is build output.
+subjects/**/*.html
+!subjects/**/content.html

@@ -1,0 +1,3373 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{TITLE}}</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --primary-bg: #eff6ff;
+            --accent: #d97706;
+            --accent-bg: #fef3c7;
+            --text-main: #1f2937;
+            --text-muted: #4b5563;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --border: #e2e8f0;
+            --border-dark: #cbd5e1;
+            --success: #059669;
+            --success-bg: #ecfdf5;
+            --danger: #dc2626;
+            --danger-bg: #fef2f2;
+            --sidebar-bg: #0f172a;
+            --sidebar-text: #f1f5f9;
+            --sidebar-hover: #1e293b;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        [data-theme="dark"] {
+            --primary: #60a5fa;
+            --primary-light: #93c5fd;
+            --primary-bg: #1e293b;
+            --accent: #fbbf24;
+            --accent-bg: #451a03;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --bg-page: #090d16;
+            --bg-card: #111827;
+            --border: #1f2937;
+            --border-dark: #374151;
+            --success: #34d399;
+            --success-bg: #064e3b;
+            --danger: #f87171;
+            --danger-bg: #7f1d1d;
+            --sidebar-bg: #0b1120;
+            --sidebar-text: #f3f4f6;
+            --sidebar-hover: #1e293b;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            line-height: 1.75;
+            display: flex;
+            min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Form controls do not inherit body font by default */
+        button, input, textarea {
+            font-family: inherit;
+        }
+
+        /* Top Progress Bar */
+        #progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b);
+            width: 0%;
+            z-index: 1000;
+            transition: width 0.1s ease;
+        }
+
+        /* Sidebar Navigation */
+        #sidebar {
+            width: 320px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+            padding: 24px 16px;
+            z-index: 1000;
+            border-right: 1px solid #1e293b;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(0);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Universal Floating Sidebar Toggle Pill */
+        #sidebar-toggle-pill {
+            position: fixed;
+            top: 14px;
+            left: 336px;
+            z-index: 1100;
+            background: var(--sidebar-bg);
+            color: #38bdf8;
+            border: 1px solid #334155;
+            padding: 7px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.84rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease, transform 0.2s ease;
+        }
+
+        #sidebar-toggle-pill:hover {
+            background: var(--sidebar-hover);
+            color: #60a5fa;
+            transform: scale(1.04);
+        }
+
+        .sidebar-collapse-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #94a3b8;
+            padding: 4px 9px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-collapse-btn:hover {
+            background: #334155;
+            color: #f1f5f9;
+        }
+
+        #main-content {
+            margin-left: 320px;
+            margin-right: auto;
+            flex: 1;
+            padding: 48px 56px;
+            /* 右侧让出助手入口槽，避免 fixed FAB 压在正文上（不是页底 padding 遮字） */
+            padding-right: 168px;
+            max-width: 1120px;
+            width: calc(100% - 320px);
+            transition: margin 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.3s ease, padding 0.3s ease;
+        }
+
+        /* Collapsed Sidebar State (Strictly Centered) */
+        body.sidebar-collapsed {
+            justify-content: center;
+        }
+
+        body.sidebar-collapsed #sidebar {
+            transform: translateX(-100%) !important;
+        }
+
+        body.sidebar-collapsed #sidebar-toggle-pill {
+            left: 16px !important;
+        }
+
+        body.sidebar-collapsed #main-content {
+            margin-left: auto !important;
+            margin-right: auto !important;
+            max-width: 1060px !important;
+            padding: 56px 32px !important;
+            padding-right: 168px !important;
+            width: 100% !important;
+        }
+
+        /* Wide screens: center content within the space beside the open sidebar */
+        @media (min-width: 1440px) {
+            body:not(.sidebar-collapsed) #main-content {
+                margin-left: calc(50vw - 400px);
+            }
+        }
+
+        /* Selection Highlighter Toolbar */
+        #text-selection-toolbar {
+            display: none;
+            position: absolute;
+            z-index: 1500;
+            background: #0f172a;
+            color: #ffffff;
+            border-radius: 8px;
+            padding: 6px 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+            border: 1px solid #334155;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hl-action-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #f1f5f9;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+        .hl-action-btn:hover { background: #334155; color: #38bdf8; }
+
+        /* Note Anchor & Flag (dashed amber underline + 💬 marker) */
+        .note-anchor {
+            border-bottom: 2px dashed var(--accent);
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .note-anchor:hover {
+            background-color: var(--accent-bg);
+        }
+        .note-flag {
+            font-size: 0.68em;
+            margin-left: 2px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Term Lexicon affordance + hover card */
+        #main-content span.en.lexi,
+        #main-content strong.lexi {
+            cursor: help;
+            border-bottom: 1px dotted var(--primary-light);
+        }
+        #term-card {
+            display: none;
+            position: absolute;
+            z-index: 1600;
+            width: min(350px, calc(100vw - 20px));
+            background: var(--bg-card);
+            border: 1px solid var(--border-dark);
+            border-radius: 12px;
+            box-shadow: 0 14px 34px rgba(0,0,0,0.35);
+            padding: 14px 16px;
+            font-size: 0.86rem;
+            line-height: 1.55;
+        }
+        .tc-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        #tc-term {
+            font-weight: 800;
+            color: var(--primary);
+            font-size: 0.95rem;
+        }
+        #tc-speak {
+            background: var(--primary-bg);
+            border: 1px solid var(--primary-light);
+            color: var(--primary);
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 3px 8px;
+            font-size: 0.82rem;
+            flex-shrink: 0;
+        }
+        .tc-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+        .tc-label {
+            flex-shrink: 0;
+            width: 42px;
+            font-weight: 700;
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            padding-top: 2px;
+        }
+        #tc-ipa { font-family: var(--font-mono); font-size: 0.84rem; }
+        #tc-chunks { letter-spacing: 0.5px; font-weight: 600; }
+        #tc-parts { color: var(--text-main); }
+        .tc-hook {
+            background: var(--accent-bg);
+            border-left: 3px solid var(--accent);
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin: 8px 0;
+            font-size: 0.82rem;
+        }
+        #tc-ask {
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Note Editor Popover */
+        #note-editor {
+            display: none;
+            position: absolute;
+            z-index: 1600;
+            width: min(330px, calc(100vw - 20px));
+            background: var(--bg-card);
+            border: 1px solid var(--border-dark);
+            border-radius: 10px;
+            box-shadow: 0 14px 34px rgba(0,0,0,0.35);
+            padding: 12px;
+        }
+        #note-editor textarea {
+            width: 100%;
+            min-height: 92px;
+            resize: vertical;
+            background: var(--bg-page);
+            color: var(--text-main);
+            border: 1px solid var(--border-dark);
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            font-family: inherit;
+            outline: none;
+        }
+        #note-editor textarea:focus {
+            border-color: var(--primary-light);
+        }
+        .note-editor-btns {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            justify-content: flex-end;
+        }
+
+        /* Sidebar Data Footer (export/import) */
+        .sidebar-footer {
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .sidebar-footer-title {
+            font-size: 0.76rem;
+            color: #94a3b8;
+            margin-bottom: 2px;
+        }
+        .data-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            padding: 7px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-align: left;
+            transition: all 0.2s ease;
+        }
+        .data-btn:hover {
+            background: #334155;
+            color: #38bdf8;
+        }
+
+        /* Single-Color Academic Highlighter */
+        .user-hl {
+            background-color: #fef08a !important;
+            color: #854d0e !important;
+            border-radius: 3px;
+            padding: 1px 3px;
+            cursor: pointer;
+            transition: filter 0.2s ease;
+            font-weight: 600;
+        }
+        .user-hl:hover { filter: brightness(0.92); }
+        [data-theme="dark"] .user-hl {
+            background-color: #a16207 !important;
+            color: #fef08a !important;
+        }
+
+        /* Floating DSH Assistant Button — 停在正文右侧预留槽内，不盖字 */
+        #dsh-floating-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 16px;
+            z-index: 1200;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 9999px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 25px rgba(30, 58, 138, 0.4);
+            transition: all 0.25s ease;
+        }
+        #dsh-floating-btn:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 12px 30px rgba(59, 130, 246, 0.5);
+        }
+
+        /* In-Page Embedded DSH Assistant Chat UI */
+        #dsh-chat-drawer {
+            position: fixed;
+            top: 0;
+            right: -480px;
+            width: 460px;
+            height: 100vh;
+            background: var(--bg-card);
+            border-left: 1px solid var(--border-dark);
+            z-index: 1300;
+            box-shadow: -10px 0 35px rgba(0,0,0,0.3);
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+        }
+        #dsh-chat-drawer.open {
+            right: 0;
+        }
+
+        /* Docked Split-Screen Mode (Fixed Live AI Workspace) */
+        body.assistant-docked #dsh-chat-drawer {
+            right: 0 !important;
+            width: 460px !important;
+            box-shadow: none !important;
+            border-left: 2px solid var(--border-dark) !important;
+        }
+
+        body.assistant-docked #dsh-floating-btn {
+            display: none !important;
+        }
+
+        body.assistant-docked #main-content {
+            margin-right: 470px !important;
+            width: calc(100% - 320px - 470px) !important;
+            padding-right: 56px !important;
+        }
+
+        body.sidebar-collapsed.assistant-docked #main-content {
+            margin-left: 40px !important;
+            margin-right: 480px !important;
+            max-width: 1000px !important;
+            width: calc(100% - 520px) !important;
+            padding-right: 32px !important;
+        }
+
+        /* 桌面：助手打开时讲义让出右侧，避免抽屉盖住正文 */
+        @media (min-width: 901px) {
+            body:has(#dsh-chat-drawer.open) #main-content {
+                margin-right: 480px !important;
+                width: calc(100% - 320px - 480px) !important;
+                max-width: min(1120px, calc(100% - 320px - 480px)) !important;
+            }
+            body.sidebar-collapsed:has(#dsh-chat-drawer.open) #main-content {
+                margin-left: 24px !important;
+                margin-right: 480px !important;
+                width: calc(100% - 504px) !important;
+                max-width: none !important;
+            }
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-page);
+        }
+        .chat-header h3 {
+            font-size: 1.05rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: var(--bg-card);
+        }
+
+        .chat-msg {
+            display: flex;
+            flex-direction: column;
+            max-width: 92%;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .chat-msg.user {
+            align-self: flex-end;
+        }
+        .chat-msg.assistant {
+            align-self: flex-start;
+            max-width: 100%;
+        }
+
+        .msg-bubble {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .chat-msg.user .msg-bubble {
+            background: var(--primary);
+            color: #ffffff;
+            border-bottom-right-radius: 2px;
+        }
+        .chat-msg.assistant .msg-bubble {
+            background: var(--bg-page);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 2px;
+        }
+
+        .msg-bubble h4 {
+            margin-top: 8px;
+            margin-bottom: 4px;
+            color: var(--primary);
+            font-size: 0.92rem;
+        }
+        .msg-bubble h4:first-child {
+            margin-top: 0;
+        }
+        .msg-bubble p {
+            margin: 0 0 8px;
+        }
+        .msg-bubble p:last-child {
+            margin-bottom: 0;
+        }
+        .msg-bubble ul, .msg-bubble ol {
+            margin: 6px 0 10px;
+            padding-left: 1.35em;
+        }
+        .msg-bubble li {
+            margin: 4px 0;
+        }
+        .chat-math {
+            font-style: italic;
+        }
+        .chat-math.display {
+            display: block;
+            text-align: center;
+            margin: 8px 0;
+        }
+        .msg-bubble sup, .msg-bubble sub {
+            font-size: 0.75em;
+            font-style: normal;
+        }
+
+        .chat-chips-area {
+            padding: 8px 16px;
+            background: var(--bg-page);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .chat-chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dark);
+            color: var(--text-muted);
+            font-size: 0.76rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .chat-chip:hover {
+            border-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .chat-input-area {
+            padding: 14px 16px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-page);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .chat-input {
+            flex: 1;
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: var(--text-main);
+            padding: 9px 12px;
+            font-size: 0.88rem;
+            font-family: inherit;
+            outline: none;
+        }
+        .chat-input:focus {
+            border-color: var(--primary-light);
+        }
+
+        .chat-send-btn {
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: opacity 0.2s ease;
+        }
+        .chat-send-btn:hover {
+            opacity: 0.9;
+        }
+        .chat-send-btn.stop-btn {
+            background: var(--danger);
+            font-size: 0.9rem;
+        }
+        #assistant-status-bar {
+            padding: 8px 16px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            background: var(--bg-page);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        #assistant-status-bar strong { color: var(--primary); }
+        .ask-figure-btn {
+            display: inline-flex;
+            margin-top: 8px;
+            background: var(--primary-bg);
+            color: var(--primary);
+            border: 1px solid var(--border-dark);
+            border-radius: 9999px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+        .msg-bubble.error {
+            border-color: var(--danger);
+            background: var(--danger-bg);
+            color: var(--danger);
+        }
+        .msg-offline-tag {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .msg-meta {
+            margin-top: 6px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+        .msg-bubble pre, .msg-bubble code {
+            font-family: var(--font-mono);
+            font-size: 0.82em;
+            white-space: pre-wrap;
+        }
+        .msg-sources {
+            margin-top: 8px;
+            font-size: 0.76rem;
+        }
+        .msg-sources button {
+            margin-right: 6px;
+            margin-top: 4px;
+        }
+
+        /* Toast Notification */
+        #toast-msg {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0f172a;
+            color: #38bdf8;
+            border: 1px solid #38bdf8;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 3000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        /* Mobile Backdrop */
+        #sidebar-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.65);
+            z-index: 999;
+            backdrop-filter: blur(2px);
+        }
+
+        .sidebar-header {
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.15rem;
+            color: #60a5fa;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .theme-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .theme-btn:hover {
+            background: #334155;
+            color: #38bdf8;
+        }
+
+        .sidebar-meta {
+            font-size: 0.76rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        /* Search Input */
+        .search-box {
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px;
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: #f1f5f9;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-box input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+        }
+
+        #sidebar nav {
+            flex: 1;
+        }
+
+        #sidebar nav ul {
+            list-style: none;
+        }
+
+        #sidebar nav ul li {
+            margin-bottom: 5px;
+        }
+
+        #sidebar nav ul li a {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.86rem;
+            display: block;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        #sidebar nav ul li a:hover, #sidebar nav ul li a.active {
+            background-color: var(--sidebar-hover);
+            color: #38bdf8;
+            transform: translateX(3px);
+        }
+
+        #sidebar nav ul li.sub {
+            padding-left: 14px;
+            font-size: 0.8rem;
+        }
+
+        #sidebar nav ul li.sub a {
+            color: #94a3b8;
+        }
+
+        /* Header Banner */
+        .doc-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+            color: #ffffff;
+            padding: 36px 40px;
+            border-radius: 16px;
+            margin-bottom: 36px;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+            position: relative;
+        }
+
+        [data-theme="dark"] .doc-header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #1f2937;
+        }
+
+        .doc-header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1.3;
+            margin-bottom: 10px;
+        }
+
+        .doc-header p {
+            font-size: 1rem;
+            color: #93c5fd;
+            margin-bottom: 6px;
+        }
+
+        .badge-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        /* Content Sections */
+        section {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 36px;
+            margin-bottom: 36px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        h2.chapter-title {
+            font-size: 1.55rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary-bg);
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h3.section-title {
+            font-size: 1.22rem;
+            color: var(--text-main);
+            margin: 28px 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-main);
+        }
+
+        /* Bilingual Term Highlight */
+        .term {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 4px;
+            background-color: var(--primary-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            font-weight: 500;
+        }
+
+        .en {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .zh {
+            color: var(--text-muted);
+            font-size: 0.9em;
+        }
+
+        /* Slide Figure Styling */
+        .slide-fig {
+            margin: 24px 0;
+            background-color: var(--bg-page);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .slide-fig:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+        }
+
+        .slide-fig img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            border: 1px solid var(--border-dark);
+            display: block;
+            margin: 0 auto 10px auto;
+        }
+
+        .slide-fig figcaption {
+            font-size: 0.86rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-top: 6px;
+        }
+
+        .slide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        /* Callout Boxes */
+        .callout {
+            padding: 18px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid;
+            font-size: 0.95rem;
+        }
+
+        .callout-info {
+            background-color: var(--primary-bg);
+            border-color: var(--primary-light);
+            color: var(--text-main);
+        }
+
+        .callout-warning {
+            background-color: var(--accent-bg);
+            border-color: var(--accent);
+            color: var(--text-main);
+        }
+
+        .callout-danger {
+            background-color: var(--danger-bg);
+            border-color: var(--danger);
+            color: var(--text-main);
+        }
+
+        .callout-success {
+            background-color: var(--success-bg);
+            border-color: var(--success);
+            color: var(--text-main);
+        }
+
+        .callout-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            font-size: 0.92rem;
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        th {
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            font-weight: 700;
+            border-bottom: 2px solid var(--border-dark);
+        }
+
+        tr:hover {
+            background-color: var(--bg-page);
+        }
+
+        pre.diagram {
+            background-color: #0f172a;
+            color: #38bdf8;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.4;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid #1e293b;
+        }
+
+        /* FLASHCARDS COMPONENT */
+        .flashcard-wrapper {
+            background: var(--bg-page);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+            text-align: center;
+        }
+
+        .flashcard {
+            background-color: var(--bg-card);
+            border: 2px solid var(--primary-light);
+            border-radius: 12px;
+            min-height: 200px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
+            margin-bottom: 16px;
+        }
+
+        .flashcard:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        .flashcard-type {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .flashcard-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .flashcard-sub {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+            font-weight: normal;
+        }
+
+        .flashcard-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 14px;
+            margin-top: 12px;
+        }
+
+        .fc-btn {
+            background-color: var(--primary);
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: opacity 0.2s ease;
+        }
+
+        .fc-btn:hover {
+            opacity: 0.9;
+        }
+
+        .fc-btn-sec {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-dark);
+        }
+
+        /* @@ZONE:EXTRA_CSS@@ */
+
+        /* MCQ SIMULATOR */
+        .mcq-container {
+            margin-top: 24px;
+        }
+
+        .mcq-card {
+            background: var(--bg-page);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+
+        .mcq-q {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 14px;
+        }
+
+        .mcq-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mcq-opt {
+            padding: 10px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.92rem;
+            transition: all 0.2s ease;
+            text-align: left;
+            color: var(--text-main);
+        }
+
+        .mcq-opt:hover:not(.locked) {
+            border-color: var(--primary-light);
+            background: var(--primary-bg);
+        }
+
+        .mcq-opt.correct {
+            background: var(--success-bg) !important;
+            border-color: var(--success) !important;
+            color: #065f46 !important;
+            font-weight: 700;
+        }
+
+        .mcq-opt.incorrect {
+            background: var(--danger-bg) !important;
+            border-color: var(--danger) !important;
+            color: #991b1b !important;
+            text-decoration: line-through;
+        }
+
+        .mcq-explain {
+            display: none;
+            margin-top: 14px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: var(--primary-bg);
+            border-left: 4px solid var(--primary-light);
+            color: var(--text-main);
+        }
+
+        .score-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--primary-bg);
+            border: 1px solid var(--primary-light);
+            padding: 14px 20px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Lightbox Modal */
+        #lightbox-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.88);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        #lightbox-img {
+            max-width: 90vw;
+            max-height: 80vh;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        #lightbox-caption {
+            color: #ffffff;
+            margin-top: 14px;
+            font-size: 1rem;
+            text-align: center;
+            max-width: 800px;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            color: #ffffff;
+            font-size: 2rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Quiz Toggle Button */
+        .quiz-toggle {
+            background-color: var(--primary-bg);
+            color: var(--primary);
+            border: 1px solid var(--primary-light);
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .quiz-toggle:hover {
+            background-color: var(--primary);
+            color: #ffffff;
+        }
+
+        .quiz-a {
+            display: none;
+            margin-top: 14px;
+            padding: 14px;
+            background-color: var(--success-bg);
+            border-left: 4px solid var(--success);
+            border-radius: 6px;
+            color: #065f46;
+            font-size: 0.92rem;
+        }
+
+        .quiz-card {
+            background: var(--bg-page);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .quiz-q {
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 14px;
+        }
+
+        /* Dark-mode legibility for graded/answer states */
+        [data-theme="dark"] .quiz-a { color: #a7f3d0; }
+        [data-theme="dark"] .mcq-opt.correct { color: #a7f3d0 !important; }
+        [data-theme="dark"] .mcq-opt.incorrect { color: #fecaca !important; }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            margin-top: 40px;
+        }
+
+        @media (max-width: 900px) {
+            #sidebar {
+                transform: translateX(-100%);
+            }
+            #sidebar-toggle-pill {
+                left: 16px !important;
+            }
+            body.sidebar-open #sidebar {
+                transform: translateX(0);
+            }
+            body.sidebar-open #sidebar-backdrop {
+                display: block;
+            }
+            #main-content {
+                margin-left: 0 !important;
+                padding: 68px 20px 20px 20px !important;
+            }
+            /* 窄屏：助手入口进顶栏预留带（与目录药丸同一行右侧），不占正文、不加页底 padding */
+            #dsh-floating-btn {
+                top: 12px;
+                right: 12px;
+                bottom: auto;
+                padding: 7px 12px;
+                font-size: 0.82rem;
+            }
+            .sb-display {
+                grid-template-columns: 1fr;
+            }
+            /* AI assistant becomes a bounded overlay drawer; docked split-screen is desktop-only */
+            #dsh-chat-drawer {
+                width: min(460px, 100vw);
+            }
+            body.assistant-docked #dsh-chat-drawer {
+                width: min(460px, 100vw) !important;
+            }
+            body.assistant-docked #main-content,
+            body.sidebar-collapsed.assistant-docked #main-content {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            body.assistant-docked #dsh-floating-btn {
+                display: flex !important;
+            }
+        }
+            /* ===== P0: Print Stylesheet (打印/PDF 输出) ===== */
+        .print-only { display: none; }
+        @media print {
+            /* 强制浅色输出：暗色主题下打印同样是白纸黑字 */
+            :root, [data-theme="dark"] {
+                --bg-page: #ffffff; --bg-card: #ffffff;
+                --text-main: #111111; --text-muted: #444444;
+                --border: #cccccc; --border-dark: #999999;
+                --primary: #1d4ed8; --primary-light: #1d4ed8; --primary-bg: #eef2ff;
+                --accent: #b45309; --accent-bg: #fffbeb;
+                --success: #15803d; --success-bg: #f0fdf4;
+                --danger: #b91c1c; --danger-bg: #fef2f2;
+                --sidebar-bg: #ffffff; --sidebar-text: #111111; --sidebar-hover: #f5f5f5;
+                --card-shadow: none;
+            }
+            body { background: #ffffff !important; font-size: 11pt; }
+            /* 隐藏全部交互层 */
+            #sidebar, #sidebar-toggle-pill, #dsh-floating-btn, #dsh-chat-drawer, #lightbox-modal,
+            #term-card, #note-editor, #text-selection-toolbar, #progress-bar,
+            .sidebar-footer, .flashcard-wrapper, .fc-btn, #mcq-app,
+            .theme-btn, .quiz-toggle, #toast-msg {
+                display: none !important;
+            }
+            /* 展开打印专属内容与折叠答案 */
+            .print-only { display: block !important; }
+            .quiz-a { display: block !important; }
+            #main-content {
+                margin: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 0 !important;
+            }
+            figure, table, .quiz-card, pre.diagram, .print-only li { break-inside: avoid; }
+            h2, h3 { break-after: avoid; }
+            img { max-width: 100% !important; }
+            /* 高亮省墨：底色改下划线 */
+            .user-hl { background: none; border-bottom: 1px solid #999999; }
+        }
+
+        /* ===== P1: Accessibility (焦点可见 + 减弱动态) ===== */
+        :focus-visible {
+            outline: 2px solid var(--primary-light);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after {
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+            }
+        }
+
+        /* ===== P2: Reading Typography (精读排版) ===== */
+        #main-content p, #main-content li { max-width: 80ch; }
+        #main-content { overflow-wrap: break-word; }
+        #main-content h2, #main-content h3 { text-wrap: balance; }
+        #main-content [id] { scroll-margin-top: 20px; }
+
+        /* ===== Teaching components: opt-in, no runtime dependencies ===== */
+        .teaching-block, .chapter-spine, .study-card {
+            margin: 1.25rem 0;
+            padding: 1.1rem 1.25rem;
+            border: 1px solid var(--border-dark);
+            border-radius: 10px;
+            background: var(--bg-card);
+            color: var(--text-main);
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+        .teaching-block { border-inline-start: 4px solid var(--teaching-accent, var(--primary)); }
+        .phenomenon-block { --teaching-accent: var(--primary); }
+        .evidence-block { --teaching-accent: var(--success); }
+        .limitation-block { --teaching-accent: var(--accent); }
+        .misconception-block { --teaching-accent: var(--danger); }
+        .transfer-block { --teaching-accent: var(--primary-light); }
+        .teaching-block .block-label, .study-card .study-label {
+            display: block;
+            font-size: .85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: .3rem;
+        }
+        .teaching-block > :last-child, .study-card > :last-child { margin-bottom: 0; }
+        .teaching-block :is(h3, h4), .study-card > header :is(h3, h4) {
+            margin: 0 0 .65rem;
+            color: var(--text-main);
+        }
+        .teaching-block :is(ul, ol) { padding-inline-start: 1.4rem; }
+        .chapter-spine, .study-card .study-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem 1.5rem;
+        }
+        .chapter-spine > div, .study-card .study-grid > div { min-width: 0; }
+        .chapter-spine dt, .study-card dt { font-weight: 700; margin-bottom: .25rem; }
+        .chapter-spine dd, .study-card dd { margin: 0; }
+        .study-card .study-grid { margin: .8rem 0 0; }
+        .study-card .study-source {
+            margin-top: 1rem;
+            padding-top: .75rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: .9rem;
+        }
+        @media (max-width: 600px) {
+            .chapter-spine, .study-card .study-grid { grid-template-columns: minmax(0, 1fr); }
+            .teaching-block, .chapter-spine, .study-card { padding: 1rem; }
+        }
+        @media print {
+            .teaching-block, .chapter-spine, .study-card {
+                background: white;
+                box-shadow: none;
+                border-color: #999;
+                break-inside: avoid;
+                overflow: visible;
+            }
+            .chapter-spine, .study-card .study-grid { display: block; }
+            .chapter-spine > div, .study-card .study-grid > div { margin-bottom: .6rem; }
+            .teaching-block :is(h3, h4), .study-card > header { break-after: avoid; }
+            /* Authors can opt long cards into natural pagination. */
+            .teaching-block.allow-page-break, .chapter-spine.allow-page-break,
+            .study-card.allow-page-break { break-inside: auto; }
+        }
+
+</style>
+</head>
+<body>
+
+    <!-- Selection Highlighter Toolbar -->
+    <div id="text-selection-toolbar">
+        <button class="hl-action-btn" id="add-hl-btn" onclick="applyHighlight()" title="添加黄色荧光高亮">🖍️ 荧光高亮</button>
+        <button class="hl-action-btn" id="add-note-btn" onclick="openNoteEditor()" title="为划选文本添加我的文字批注">📝 批注</button>
+        <button class="hl-action-btn" id="remove-hl-btn" onclick="removeHighlightAtSelection()" style="display:none; color: #f87171;" title="清除高亮">🗑️ 清除高亮</button>
+        <div style="width: 1px; height: 16px; background: #334155; margin: 0 2px;"></div>
+        <button class="hl-action-btn" onclick="sendSelectionToInPageAI()" title="在窗口内向 DSH 助手追问该概念">🤖 解释此概念</button>
+    </div>
+
+    <!-- Note Editor Popover -->
+    <div id="note-editor">
+        <textarea id="note-editor-text" placeholder="写下你的理解、疑问或记忆钩子…（批注仅保存在本机浏览器，请定期从左侧目录底部导出备份）"></textarea>
+        <div class="note-editor-btns">
+            <button class="hl-action-btn" id="note-delete-btn" onclick="deleteNote()" style="display:none; color: #f87171;">🗑️ 删除</button>
+            <button class="hl-action-btn" onclick="closeNoteEditor()">取消</button>
+            <button class="hl-action-btn" onclick="saveNote()" style="color: #4ade80;">💾 保存批注</button>
+        </div>
+    </div>
+
+    <!-- Term Lexicon Hover Card -->
+    <div id="term-card">
+        <div class="tc-head">
+            <span id="tc-term"></span>
+            <button id="tc-speak" title="英文朗读 (本机语音合成)">🔊 朗读</button>
+        </div>
+        <div class="tc-row"><span class="tc-label">IPA</span><span id="tc-ipa"></span></div>
+        <div class="tc-row"><span class="tc-label">拼读</span><span id="tc-chunks"></span></div>
+        <div class="tc-row"><span class="tc-label">词源</span><span id="tc-parts"></span></div>
+        <div class="tc-hook" id="tc-hook"></div>
+        <button id="tc-ask">🤖 问 AI 这个概念 →</button>
+    </div>
+
+    <!-- Progress Bar -->
+    <div id="progress-bar"></div>
+
+    <!-- Universal Floating Sidebar Toggle Button -->
+    <button id="sidebar-toggle-pill" onclick="toggleSidebar()" title="展开/收起目录 (快捷键 [ )">
+        <span id="sidebar-pill-icon">◀</span> <span id="sidebar-pill-text">收起目录</span>
+    </button>
+
+    <!-- Mobile Backdrop -->
+    <div id="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar">
+        <div class="sidebar-header">
+            <h2>
+                <span>{{SIDEBAR_TITLE}}</span>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <button class="theme-btn" onclick="toggleTheme()" id="theme-toggle-btn">🌙 暗色</button>
+                    <button class="sidebar-collapse-btn" onclick="toggleSidebar(false)" title="收起目录 (快捷键 [ )">◀</button>
+                </div>
+            </h2>
+            <div class="sidebar-meta">{{SIDEBAR_META}}</div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="{{SEARCH_PLACEHOLDER}}" onkeyup="filterContent()">
+        </div>
+
+        <nav>
+            <ul id="navList">
+<!-- @@ZONE:NAV@@ -->
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-footer-title">💾 学习数据（批注 <span id="note-count">0</span> 条）</div>
+            <button class="data-btn" onclick="exportStudyData()" title="将全部高亮与批注下载为 JSON 备份文件">📤 导出高亮 + 批注 (JSON)</button>
+            <button class="data-btn" onclick="document.getElementById('import-file-input').click()" title="从 JSON 备份文件恢复高亮与批注">📥 导入数据备份</button>
+            <button class="data-btn" onclick="copyNotesAsMarkdown()" title="复制为 Markdown，可粘贴回流到 Week_XX.md 知识库">📋 复制批注为 Markdown</button>
+            <input type="file" id="import-file-input" accept=".json,application/json" style="display:none" onchange="importStudyData(this.files[0]); this.value='';">
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main id="main-content">
+        
+        <!-- Header Banner -->
+        <!-- @@ZONE:HEADER@@ --><!-- @@ZONE:CONTENT@@ --></main>
+
+    <!-- Floating DSH Assistant Button -->
+    <button type="button" id="dsh-floating-btn" onclick="toggleDSHDrawer()" title="打开本机 Grok 学习助手" aria-label="打开本机 Grok 学习助手">
+        <span>🤖</span> <span>Grok 助手</span>
+    </button>
+
+    <!-- In-Page Embedded DSH Assistant Drawer -->
+    <div id="dsh-chat-drawer">
+        <div class="chat-header">
+            <h3><span>🤖</span> {{ASSISTANT_NAME}}</h3>
+            <div style="display: flex; gap: 5px; align-items: center;">
+                <button class="sidebar-collapse-btn" onclick="toggleDockAssistant()" id="btn-dock-assistant" title="固定分屏 / 浮动窗口切换 (让 AI 常驻右侧分屏)">📌 固定分屏</button>
+                <button class="sidebar-collapse-btn" onclick="toggleAPISettings()" id="btn-api-settings" title="查看 Grok 连接与讲次资料">⚙️ 状态</button>
+                <button class="sidebar-collapse-btn" onclick="clearChatHistory()" title="清空对话记录">🧹</button>
+                <button class="sidebar-collapse-btn" onclick="toggleDSHDrawer(false)" style="font-size: 1.1rem; padding: 2px 7px;" aria-label="关闭 AI 助手面板">&times;</button>
+            </div>
+        </div>
+
+        <div id="dsh-api-settings" style="display: none; background: var(--bg-page); border-bottom: 1px solid var(--border); padding: 14px 16px; font-size: 0.82rem;">
+            <div style="font-weight: 700; color: var(--primary); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                <span>本机 Grok 订阅助手</span>
+                <span id="api-status-badge" style="color: var(--text-muted); font-weight: normal;">检测中</span>
+            </div>
+            <p id="assistant-lecture-label" style="margin-bottom: 6px; color: var(--text-muted);"></p>
+            <p id="assistant-materials-label" style="margin-bottom: 8px; color: var(--text-muted);"></p>
+            <p style="margin-bottom: 8px; color: var(--text-muted);">
+                推理档位
+                <select id="grok-variant-select" class="chat-input" style="width: auto; display: inline-block; padding: 4px 8px; font-size: 0.78rem; margin-left: 6px;" onchange="setGrokVariant(this.value)">
+                    <option value="low">低（默认，边问边答）</option>
+                    <option value="medium">中（问图、检查理解）</option>
+                    <option value="high">高（更慢、更细）</option>
+                </select>
+            </p>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+                <button class="chat-chip" onclick="refreshAssistantStatus()">刷新连接</button>
+                <button class="chat-chip" onclick="newGrokConversation()">新对话</button>
+                <button class="chat-chip" onclick="retryLastGrok()">重试</button>
+                <button class="chat-chip" onclick="checkMyUnderstanding()">检查我的理解</button>
+                <button class="chat-chip" onclick="openRegisteredSource('slides')">打开课件</button>
+                <button class="chat-chip" onclick="openRegisteredSource('reading')">打开阅读</button>
+            </div>
+            <p style="margin: 0; font-size: 0.76rem; color: var(--text-muted);">不需要填写 API Key。连不上时请双击「打开讲义」。失败不会改用其他付费渠道。</p>
+        </div>
+        <div id="assistant-status-bar">
+            <span id="assistant-status-text">请双击「打开讲义」以连接 Grok。</span>
+        </div>
+        
+        <!-- Chat Message Area -->
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg assistant">
+                <div class="msg-bubble">
+                    <p style="margin-bottom: 6px;">你好，我是 <strong>{{ASSISTANT_NAME}}</strong>。</p>
+                    <p style="margin-bottom: 0;">划选正文点「解释此概念」，或点图下的「问这张图」。回答依据本讲课件、指定阅读和当前章节。请用「打开讲义」进入本页。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Question Chips -->
+        <div class="chat-chips-area">{{QUICK_CHIPS}}<div class="chat-input-area">
+            <input type="text" id="chatInput" class="chat-input" placeholder="输入你想探讨的概念或提问..." onkeydown="handleChatKeyDown(event)">
+            <button class="chat-send-btn stop-btn" id="btn-stop-grok" onclick="stopGeneration()" title="停止生成" style="display:none;">■</button>
+            <button class="chat-send-btn" id="btn-send-grok" onclick="sendUserMessage()" title="发送提问">➤</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-msg"></div>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox-modal" onclick="closeLightbox(event)">
+        <span class="lightbox-close" onclick="closeLightbox(event)" role="button" tabindex="0" aria-label="关闭大图">&times;</span>
+        <img id="lightbox-img" src="" alt="Enlarged Slide">
+        <div id="lightbox-caption"></div>
+    </div>
+
+    <!-- Interactive Scripts -->
+    <script>
+        // ==========================================
+        // DOCUMENT IDENTITY & STORAGE NAMESPACE
+        // 框架化：DOC_ID 派生全部 localStorage 键；本科目取 "psyc" 时与历史键名逐字节一致（零数据迁移）
+        // ==========================================
+        const DOC_ID = "{{DOC_ID}}";
+        const APP_ID = "{{APP_ID}}";
+        const GUIDE_FILE = "{{GUIDE_FILE}}";
+        const ASSISTANT_META = {{ASSISTANT_META_JSON}};
+        const AISTUDIO_PROMPT = {{AISTUDIO_PROMPT_JSON}};
+        const COURSE_SYSTEM_PROMPT = "{{SYSTEM_PROMPT}}";
+        const ASSISTANT_ORIGIN = (location.protocol === "http:" && location.hostname === "127.0.0.1")
+            ? location.origin
+            : "http://127.0.0.1:8787";
+        function localGuideUrl() {
+            return "http://127.0.0.1:8787/guides/" + encodeURIComponent(DOC_ID) + "/" + encodeURIComponent(GUIDE_FILE);
+        }
+        function maybeRedirectToLocalAssistant() {
+            if (location.protocol !== "file:") return false;
+            location.replace(localGuideUrl());
+            return true;
+        }
+        const LS = {
+            theme: DOC_ID + "_theme",
+            sidebar: DOC_ID + "_sidebar_collapsed",
+            docked: DOC_ID + "_assistant_docked",
+            highlights: DOC_ID + "_study_highlights_v4",
+            notes: DOC_ID + "_study_notes_v1",
+            chatHistory: DOC_ID + "_ai_chat_history",
+            grokChat: DOC_ID + "_grok_chat_v1",
+            grokConversation: DOC_ID + "_grok_conversation_v1",
+            grokLecture: DOC_ID + "_grok_lecture_v1",
+            grokVariant: DOC_ID + "_grok_variant_v1",
+            aiEndpoint: DOC_ID + "_ai_endpoint",
+            aiKey: DOC_ID + "_ai_key",
+            aiModel: DOC_ID + "_ai_model"
+        };
+
+        // Progress Bar
+        window.onscroll = function() {
+            let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let scrolled = (winScroll / height) * 100;
+            document.getElementById("progress-bar").style.width = scrolled + "%";
+        };
+
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const btn = document.getElementById("theme-toggle-btn");
+            if (html.getAttribute("data-theme") === "dark") {
+                html.setAttribute("data-theme", "light");
+                btn.textContent = "🌙 暗色";
+                localStorage.setItem(LS.theme, "light");
+            } else {
+                html.setAttribute("data-theme", "dark");
+                btn.textContent = "☀️ 亮色";
+                localStorage.setItem(LS.theme, "dark");
+            }
+        }
+        if (localStorage.getItem(LS.theme) === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+            document.getElementById("theme-toggle-btn").textContent = "☀️ 亮色";
+        }
+
+        // Lightbox
+        function openLightbox(src, caption) {
+            const modal = document.getElementById("lightbox-modal");
+            document.getElementById("lightbox-img").src = src;
+            document.getElementById("lightbox-caption").textContent = caption;
+            modal.style.display = "flex";
+        }
+        function closeLightbox(e) {
+            if (e.target.id === "lightbox-modal" || e.target.className === "lightbox-close") {
+                document.getElementById("lightbox-modal").style.display = "none";
+            }
+        }
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "Escape") {
+                document.getElementById("lightbox-modal").style.display = "none";
+                closeNoteEditor();
+                hideTermCard();
+            }
+        });
+
+        // Search Filter
+        function filterContent() {
+            let input = document.getElementById("searchInput").value.toLowerCase();
+            let links = document.querySelectorAll("#navList li");
+            links.forEach(li => {
+                let text = li.textContent.toLowerCase();
+                if (text.includes(input)) {
+                    li.style.display = "";
+                } else {
+                    li.style.display = input === "" ? "" : "none";
+                }
+            });
+        }
+
+        // @@ZONE:EXTRA_JS@@
+
+        // Flashcards Data
+        // @@ZONE:DATA:flashcards@@
+
+        let curFC = 0;
+        let fcFlipped = false;
+
+        function updateFC() {
+            if (!flashcards.length) return;
+            const typeEl = document.getElementById("fc-type");
+            if (!typeEl) return;
+            const card = flashcards[curFC];
+            const fcTag = fcFlipped ? "MECHANISM & ANSWER" : "CONCEPT PROMPT";
+            document.getElementById("fc-type").textContent = (card.type ? card.type + " · " : "") + fcTag + " (点击翻转)";
+            document.getElementById("fc-front").textContent = fcFlipped ? card.back : card.front;
+            document.getElementById("fc-sub").textContent = fcFlipped ? "点击返回概念名称 ↺" : "点击翻面查看机制与考点 ➔";
+            document.getElementById("fc-counter").textContent = (curFC + 1) + " / " + flashcards.length;
+        }
+
+        function flipCard() {
+            fcFlipped = !fcFlipped;
+            updateFC();
+        }
+
+        function nextCard() {
+            fcFlipped = false;
+            curFC = (curFC + 1) % flashcards.length;
+            updateFC();
+        }
+
+        function prevCard() {
+            fcFlipped = false;
+            curFC = (curFC - 1 + flashcards.length) % flashcards.length;
+            updateFC();
+        }
+
+        function shuffleCards() {
+            fcFlipped = false;
+            curFC = Math.floor(Math.random() * flashcards.length);
+            updateFC();
+        }
+
+        // MCQ Questions Data
+        // @@ZONE:DATA:mcqData@@
+
+        let userScore = 0;
+        let answeredQuestions = new Set();
+
+        function initMCQ() {
+            const container = document.getElementById("mcq-app");
+            container.innerHTML = "";
+            mcqData.forEach((item, qIdx) => {
+                const card = document.createElement("div");
+                card.className = "mcq-card";
+                card.id = `mcq-card-${qIdx}`;
+
+                const qTitle = document.createElement("div");
+                qTitle.className = "mcq-q";
+                qTitle.textContent = item.q;
+                card.appendChild(qTitle);
+
+                const optsDiv = document.createElement("div");
+                optsDiv.className = "mcq-options";
+
+                item.opts.forEach((opt, oIdx) => {
+                    const optBtn = document.createElement("button");
+                    optBtn.className = "mcq-opt";
+                    optBtn.textContent = opt;
+                    optBtn.onclick = () => selectOption(qIdx, oIdx, item.ans, optBtn);
+                    optsDiv.appendChild(optBtn);
+                });
+
+                card.appendChild(optsDiv);
+
+                const expDiv = document.createElement("div");
+                expDiv.className = "mcq-explain";
+                expDiv.id = `mcq-exp-${qIdx}`;
+                expDiv.innerHTML = `<strong>【考点解析】</strong>: ${item.exp}`;
+                card.appendChild(expDiv);
+
+                container.appendChild(card);
+            });
+        }
+
+        function selectOption(qIdx, selectedIdx, correctIdx, btn) {
+            if (answeredQuestions.has(qIdx)) return;
+            answeredQuestions.add(qIdx);
+
+            const card = document.getElementById(`mcq-card-${qIdx}`);
+            const allOpts = card.querySelectorAll(".mcq-opt");
+            allOpts.forEach(b => b.classList.add("locked"));
+
+            if (selectedIdx === correctIdx) {
+                btn.classList.add("correct");
+                userScore++;
+            } else {
+                btn.classList.add("incorrect");
+                allOpts[correctIdx].classList.add("correct");
+            }
+
+            document.getElementById("mcq-score").textContent = userScore;
+            document.getElementById("mcq-done").textContent = answeredQuestions.size;
+            document.getElementById(`mcq-exp-${qIdx}`).style.display = "block";
+        }
+
+        function resetMCQ() {
+            userScore = 0;
+            answeredQuestions.clear();
+            document.getElementById("mcq-score").textContent = "0";
+            document.getElementById("mcq-done").textContent = "0";
+            initMCQ();
+        }
+
+        // Active Recall Subjective Toggle
+        function toggleQuiz(btn) {
+            const answerDiv = btn.nextElementSibling;
+            if (answerDiv.style.display === "block") {
+                answerDiv.style.display = "none";
+                btn.textContent = "显示答案与深度解析";
+                btn.setAttribute("aria-expanded", "false");
+            } else {
+                answerDiv.style.display = "block";
+                btn.textContent = "隐藏答案与解析";
+                btn.setAttribute("aria-expanded", "true");
+            }
+        }
+
+        // Sidebar Toggle Logic
+        function toggleSidebar(forceState) {
+            const body = document.body;
+            const isMobile = window.innerWidth <= 900;
+            const pillIcon = document.getElementById("sidebar-pill-icon");
+            const pillText = document.getElementById("sidebar-pill-text");
+
+            if (isMobile) {
+                if (typeof forceState === "boolean") {
+                    if (forceState) body.classList.add("sidebar-open");
+                    else body.classList.remove("sidebar-open");
+                } else {
+                    body.classList.toggle("sidebar-open");
+                }
+                const isOpen = body.classList.contains("sidebar-open");
+                if (pillIcon && pillText) {
+                    pillIcon.textContent = isOpen ? "◀" : "☰";
+                    pillText.textContent = isOpen ? "收起目录" : "目录";
+                }
+            } else {
+                let isCollapsed;
+                if (typeof forceState === "boolean") {
+                    if (forceState) {
+                        body.classList.remove("sidebar-collapsed");
+                        isCollapsed = false;
+                    } else {
+                        body.classList.add("sidebar-collapsed");
+                        isCollapsed = true;
+                    }
+                } else {
+                    isCollapsed = body.classList.toggle("sidebar-collapsed");
+                }
+                localStorage.setItem(LS.sidebar, isCollapsed ? "true" : "false");
+                if (pillIcon && pillText) {
+                    pillIcon.textContent = isCollapsed ? "☰" : "◀";
+                    pillText.textContent = isCollapsed ? "展开目录" : "收起目录";
+                }
+            }
+        }
+
+        // Auto close sidebar on mobile when clicking nav items
+        document.querySelectorAll("#navList a").forEach(link => {
+            link.addEventListener("click", () => {
+                if (window.innerWidth <= 900) {
+                    toggleSidebar(false);
+                }
+            });
+        });
+
+        // Keyboard Shortcut '[' or ']' to toggle sidebar
+        document.addEventListener("keydown", function(e) {
+            if ((e.key === "[" || e.key === "]") && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") {
+                toggleSidebar();
+            }
+        });
+
+        // Restore sidebar state from localStorage
+        if (window.innerWidth > 900 && localStorage.getItem(LS.sidebar) === "true") {
+            document.body.classList.add("sidebar-collapsed");
+            const pillIcon = document.getElementById("sidebar-pill-icon");
+            const pillText = document.getElementById("sidebar-pill-text");
+            if (pillIcon && pillText) {
+                pillIcon.textContent = "☰";
+                pillText.textContent = "展开目录";
+            }
+        }
+
+        // ==========================================
+        // SINGLE-COLOR ACADEMIC HIGHLIGHTER WITH ROBUST PERSISTENCE
+        // ==========================================
+        let selectedRange = null;
+        let activeHighlightEl = null;
+
+        document.addEventListener("selectionchange", handleSelection);
+        document.addEventListener("click", handleDocClick);
+
+        function getAllTextContainers() {
+            return Array.from(document.querySelectorAll("#main-content p, #main-content li, #main-content td, #main-content th, #main-content div.quiz-q, #main-content div.quiz-a, #main-content figcaption, #main-content blockquote, #main-content h2, #main-content h3, #main-content h4"));
+        }
+
+        function handleSelection() {
+            const selection = window.getSelection();
+            const toolbar = document.getElementById("text-selection-toolbar");
+            const addBtn = document.getElementById("add-hl-btn");
+            const removeBtn = document.getElementById("remove-hl-btn");
+
+            if (!selection || selection.isCollapsed || selection.toString().trim() === "") {
+                if (!activeHighlightEl) {
+                    toolbar.style.display = "none";
+                }
+                return;
+            }
+
+            const range = selection.getRangeAt(0);
+            const container = range.commonAncestorContainer;
+
+            if (!document.getElementById("main-content").contains(container)) {
+                toolbar.style.display = "none";
+                return;
+            }
+
+            selectedRange = range;
+            activeHighlightEl = null;
+            addBtn.style.display = "inline-flex";
+            removeBtn.style.display = "none";
+
+            const rect = range.getBoundingClientRect();
+            positionToolbar(toolbar, rect);
+        }
+
+        function handleDocClick(e) {
+            const toolbar = document.getElementById("text-selection-toolbar");
+            const noteTarget = e.target.closest("[data-note-id]");
+            const hlEl = e.target.closest(".user-hl");
+
+            // Clicking a note anchor/flag opens its editor popover
+            if (noteTarget) {
+                toolbar.style.display = "none";
+                activeHighlightEl = null;
+                openExistingNote(noteTarget.dataset.noteId);
+                return;
+            }
+            // Clicking outside the editor (and not on the toolbar that opened it) closes it
+            if (!e.target.closest("#note-editor") && !e.target.closest("#text-selection-toolbar")) {
+                closeNoteEditor();
+            }
+            // Clicking outside the term card (and not on a lexicon term) closes it
+            if (!e.target.closest("#term-card") && !e.target.closest("span.en") && !e.target.closest("strong.lexi")) {
+                hideTermCard();
+            }
+
+            if (hlEl) {
+                activeHighlightEl = hlEl;
+                const rect = hlEl.getBoundingClientRect();
+                document.getElementById("add-hl-btn").style.display = "none";
+                document.getElementById("remove-hl-btn").style.display = "inline-flex";
+                positionToolbar(toolbar, rect);
+            } else if (!e.target.closest("#text-selection-toolbar") && !e.target.closest("#dsh-chat-drawer") && !e.target.closest("#dsh-floating-btn")) {
+                if (!window.getSelection() || window.getSelection().isCollapsed) {
+                    toolbar.style.display = "none";
+                    activeHighlightEl = null;
+                }
+            }
+        }
+
+        function positionToolbar(toolbar, rect) {
+            toolbar.style.display = "flex";
+            const top = window.scrollY + rect.top - 46;
+            const left = window.scrollX + rect.left + (rect.width / 2) - (toolbar.offsetWidth / 2);
+            const maxLeft = window.scrollX + document.documentElement.clientWidth - toolbar.offsetWidth - 10;
+            toolbar.style.top = Math.max(10, top) + "px";
+            toolbar.style.left = Math.min(Math.max(10, left), Math.max(10, maxLeft)) + "px";
+        }
+
+        function applyHighlight() {
+            if (!selectedRange) return;
+            const text = selectedRange.toString().trim();
+            if (!text) return;
+
+            const containers = getAllTextContainers();
+            const startContainer = selectedRange.startContainer.nodeType === 3 ? selectedRange.startContainer.parentElement : selectedRange.startContainer;
+            const containerBlock = startContainer.closest("p, li, td, th, div.quiz-q, div.quiz-a, figcaption, blockquote, h2, h3, h4");
+
+            if (!containerBlock) {
+                showToast("⚠️ 该区域（如按钮/选项）暂不支持高亮标注。");
+                return;
+            }
+            const cIdx = containers.indexOf(containerBlock);
+            const hlId = "hl_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+
+            let success = false;
+            try {
+                const mark = document.createElement("mark");
+                mark.className = "user-hl";
+                mark.dataset.hlId = hlId;
+                selectedRange.surroundContents(mark);
+                success = true;
+            } catch (err) {
+                success = highlightTextInElement(containerBlock, text, hlId);
+            }
+
+            if (success) {
+                const saved = JSON.parse(localStorage.getItem(LS.highlights) || "[]");
+                saved.push({ id: hlId, cIdx: cIdx, text: text });
+                localStorage.setItem(LS.highlights, JSON.stringify(saved));
+                showToast("🖍️ 已添加荧光黄色高亮（已自动保存）！");
+            } else {
+                showToast("⚠️ 选区跨越复杂排版，无法高亮——请尝试缩短划选范围。");
+            }
+
+            window.getSelection().removeAllRanges();
+            document.getElementById("text-selection-toolbar").style.display = "none";
+            selectedRange = null;
+        }
+
+        function removeHighlightAtSelection() {
+            if (activeHighlightEl) {
+                const id = activeHighlightEl.dataset.hlId;
+                const text = activeHighlightEl.textContent;
+                const parent = activeHighlightEl.parentNode;
+                while (activeHighlightEl.firstChild) {
+                    parent.insertBefore(activeHighlightEl.firstChild, activeHighlightEl);
+                }
+                parent.removeChild(activeHighlightEl);
+                parent.normalize();
+
+                let saved = JSON.parse(localStorage.getItem(LS.highlights) || "[]");
+                saved = saved.filter(h => h.id !== id);
+                localStorage.setItem(LS.highlights, JSON.stringify(saved));
+
+                document.getElementById("text-selection-toolbar").style.display = "none";
+                activeHighlightEl = null;
+                showToast("🗑️ 已清除高亮标注！");
+            }
+        }
+
+        function highlightTextInElement(element, text, hlId) {
+            if (!element || !text) return false;
+            if (element.querySelector(`[data-hl-id="${hlId}"]`)) return true;
+
+            const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            const textNodes = [];
+
+            while ((node = walker.nextNode())) {
+                if (!node.parentElement.closest(".user-hl") && node.nodeValue.includes(text)) {
+                    textNodes.push(node);
+                }
+            }
+
+            for (const textNode of textNodes) {
+                const idx = textNode.nodeValue.indexOf(text);
+                if (idx !== -1) {
+                    const targetNode = textNode.splitText(idx);
+                    targetNode.splitText(text.length);
+
+                    const mark = document.createElement("mark");
+                    mark.className = "user-hl";
+                    mark.dataset.hlId = hlId;
+                    targetNode.parentNode.insertBefore(mark, targetNode);
+                    mark.appendChild(targetNode);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function restoreHighlights() {
+            const saved = JSON.parse(localStorage.getItem(LS.highlights) || "[]");
+            if (!saved.length) return;
+
+            const containers = getAllTextContainers();
+            saved.forEach(item => {
+                let targetContainer = containers[item.cIdx];
+                // cIdx can drift if the document structure changed — verify the text is really there
+                if ((!targetContainer || (item.text && !targetContainer.textContent.includes(item.text))) && item.text) {
+                    targetContainer = containers.find(c => c.textContent.includes(item.text));
+                }
+                if (targetContainer) {
+                    highlightTextInElement(targetContainer, item.text, item.id);
+                }
+            });
+        }
+
+        // ==========================================
+        // IN-PAGE MARGIN NOTES (ANNOTATIONS) + STUDY DATA EXPORT/IMPORT
+        // ==========================================
+        let notesCache = [];
+        let editingNoteId = null;   // null => creating a brand-new note
+        let pendingNoteRange = null;
+
+        function loadNotes() {
+            try { notesCache = JSON.parse(localStorage.getItem(LS.notes) || "[]"); }
+            catch (e) { notesCache = []; }
+        }
+        function saveNotes() {
+            localStorage.setItem(LS.notes, JSON.stringify(notesCache));
+            updateNoteCount();
+        }
+        function updateNoteCount() {
+            const el = document.getElementById("note-count");
+            if (el) el.textContent = notesCache.length;
+        }
+
+        // Called from the selection toolbar ("📝 批注" button)
+        function openNoteEditor() {
+            if (!selectedRange || selectedRange.toString().trim() === "") {
+                showToast("⚠️ 请先在正文中划选要批注的文字。");
+                return;
+            }
+            editingNoteId = null;
+            pendingNoteRange = selectedRange;
+            document.getElementById("note-editor-text").value = "";
+            document.getElementById("note-delete-btn").style.display = "none";
+            document.getElementById("text-selection-toolbar").style.display = "none";
+            showNoteEditorAt(pendingNoteRange.getBoundingClientRect());
+        }
+
+        // Called when clicking an existing 💬 anchor
+        function openExistingNote(noteId) {
+            const n = notesCache.find(x => x.id === noteId);
+            if (!n) return;
+            editingNoteId = noteId;
+            pendingNoteRange = null;
+            document.getElementById("note-editor-text").value = n.note;
+            document.getElementById("note-delete-btn").style.display = "";
+            document.getElementById("text-selection-toolbar").style.display = "none";
+            const anchor = document.querySelector(`[data-note-id="${noteId}"]`);
+            if (anchor) showNoteEditorAt(anchor.getBoundingClientRect());
+        }
+
+        function showNoteEditorAt(rect) {
+            const ed = document.getElementById("note-editor");
+            ed.style.display = "block";
+            const top = window.scrollY + rect.bottom + 8;
+            const left = window.scrollX + rect.left;
+            const maxLeft = window.scrollX + document.documentElement.clientWidth - ed.offsetWidth - 10;
+            ed.style.top = Math.max(10, top) + "px";
+            ed.style.left = Math.min(Math.max(10, left), Math.max(10, maxLeft)) + "px";
+            setTimeout(() => document.getElementById("note-editor-text").focus(), 30);
+        }
+
+        function closeNoteEditor() {
+            const ed = document.getElementById("note-editor");
+            if (ed) ed.style.display = "none";
+            editingNoteId = null;
+            pendingNoteRange = null;
+        }
+
+        function saveNote() {
+            const noteText = document.getElementById("note-editor-text").value.trim();
+            if (!noteText) { showToast("⚠️ 批注内容为空，未保存。"); return; }
+
+            // Edit path: update in place, no DOM re-anchoring needed
+            if (editingNoteId) {
+                const n = notesCache.find(x => x.id === editingNoteId);
+                if (n) { n.note = noteText; n.ts = Date.now(); saveNotes(); showToast("💾 批注已更新！"); }
+                closeNoteEditor();
+                return;
+            }
+
+            // Create path: wrap the selected text with a note anchor
+            if (!pendingNoteRange) { closeNoteEditor(); return; }
+            const text = pendingNoteRange.toString().trim();
+            const containers = getAllTextContainers();
+            const startContainer = pendingNoteRange.startContainer.nodeType === 3 ? pendingNoteRange.startContainer.parentElement : pendingNoteRange.startContainer;
+            const containerBlock = startContainer.closest("p, li, td, th, div.quiz-q, div.quiz-a, figcaption, blockquote, h2, h3, h4");
+            if (!containerBlock) {
+                showToast("⚠️ 该区域（如按钮/选项）暂不支持批注。");
+                closeNoteEditor();
+                return;
+            }
+            const cIdx = containers.indexOf(containerBlock);
+            const noteId = "note_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+
+            let success = false;
+            try {
+                const span = document.createElement("span");
+                span.className = "note-anchor";
+                span.dataset.noteId = noteId;
+                pendingNoteRange.surroundContents(span);
+                appendNoteFlag(span, noteId);
+                success = true;
+            } catch (err) {
+                success = wrapNoteAnchorInElement(containerBlock, text, noteId);
+            }
+
+            if (success) {
+                notesCache.push({ id: noteId, cIdx: cIdx, text: text, note: noteText, ts: Date.now() });
+                saveNotes();
+                showToast("📝 批注已保存（请定期从左侧目录底部导出备份）！");
+            } else {
+                showToast("⚠️ 选区跨越复杂排版，无法批注——请缩短划选范围。");
+            }
+            window.getSelection().removeAllRanges();
+            selectedRange = null;
+            closeNoteEditor();
+        }
+
+        function deleteNote() {
+            if (!editingNoteId) return;
+            const id = editingNoteId;
+            notesCache = notesCache.filter(n => n.id !== id);
+            saveNotes();
+            const anchor = document.querySelector(`[data-note-id="${id}"]`);
+            if (anchor) {
+                const parent = anchor.parentNode;
+                const flag = anchor.querySelector(".note-flag");
+                if (flag) flag.remove();
+                while (anchor.firstChild) parent.insertBefore(anchor.firstChild, anchor);
+                parent.removeChild(anchor);
+                parent.normalize();
+            }
+            showToast("🗑️ 批注已删除！");
+            closeNoteEditor();
+        }
+
+        function appendNoteFlag(span, noteId) {
+            const flag = document.createElement("sup");
+            flag.className = "note-flag";
+            flag.textContent = "\uD83D\uDCAC";
+            flag.dataset.noteId = noteId;
+            flag.title = "查看/编辑批注";
+            span.appendChild(flag);
+        }
+
+        function wrapNoteAnchorInElement(element, text, noteId) {
+            if (!element || !text) return false;
+            if (element.querySelector(`[data-note-id="${noteId}"]`)) return true;
+            const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            const textNodes = [];
+            while ((node = walker.nextNode())) {
+                if (!node.parentElement.closest(".note-anchor") && !node.parentElement.closest(".note-flag") && node.nodeValue.includes(text)) {
+                    textNodes.push(node);
+                }
+            }
+            for (const textNode of textNodes) {
+                const idx = textNode.nodeValue.indexOf(text);
+                if (idx !== -1) {
+                    const targetNode = textNode.splitText(idx);
+                    targetNode.splitText(text.length);
+                    const span = document.createElement("span");
+                    span.className = "note-anchor";
+                    span.dataset.noteId = noteId;
+                    targetNode.parentNode.insertBefore(span, targetNode);
+                    span.appendChild(targetNode);
+                    appendNoteFlag(span, noteId);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function restoreNotes() {
+            if (!notesCache.length) return;
+            const containers = getAllTextContainers();
+            notesCache.forEach(item => {
+                let targetContainer = containers[item.cIdx];
+                // same cIdx-drift safety net as highlights: verify text, else fall back to search
+                if ((!targetContainer || (item.text && !targetContainer.textContent.includes(item.text))) && item.text) {
+                    targetContainer = containers.find(c => c.textContent.includes(item.text));
+                }
+                if (targetContainer) wrapNoteAnchorInElement(targetContainer, item.text, item.id);
+            });
+        }
+
+        // ---------- Study Data Export / Import / Markdown ----------
+        function exportStudyData() {
+            const data = {
+                app: APP_ID,
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                highlights: JSON.parse(localStorage.getItem(LS.highlights) || "[]"),
+                notes: JSON.parse(localStorage.getItem(LS.notes) || "[]")
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = APP_ID + "_backup_" + new Date().toISOString().slice(0, 10) + ".json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            showToast("📤 已导出高亮与批注备份文件！");
+        }
+
+        function importStudyData(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const data = JSON.parse(reader.result);
+                    if (!data || (!Array.isArray(data.highlights) && !Array.isArray(data.notes))) {
+                        throw new Error("bad format");
+                    }
+                    // 框架化：跨文档备份指纹校验（旧备份无 app 字段时放行，保持原行为）
+                    if (data.app && data.app !== APP_ID) {
+                        if (!confirm("⚠️ 这份备份来自另一个文档（" + data.app + "）。\n导入它可能导致高亮/批注错位。\n仍要继续吗？")) return;
+                    }
+                    if (Array.isArray(data.highlights)) localStorage.setItem(LS.highlights, JSON.stringify(data.highlights));
+                    if (Array.isArray(data.notes)) localStorage.setItem(LS.notes, JSON.stringify(data.notes));
+                    showToast("📥 导入成功，正在刷新页面...");
+                    setTimeout(() => location.reload(), 900);
+                } catch (e) {
+                    showToast("⚠️ 导入失败：文件格式不正确。");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function chapterTitleFor(selector) {
+            const el = document.querySelector(selector);
+            const sec = el ? el.closest("section") : null;
+            const h2 = sec ? sec.querySelector("h2") : null;
+            return h2 ? h2.textContent.trim() : null;
+        }
+
+        function copyNotesAsMarkdown() {
+            const notes = JSON.parse(localStorage.getItem(LS.notes) || "[]");
+            const hls = JSON.parse(localStorage.getItem(LS.highlights) || "[]");
+            if (!notes.length && !hls.length) { showToast("⚠️ 还没有任何批注或高亮。"); return; }
+
+            let md = "# {{SIDEBAR_TITLE}} · 我的批注与高亮\n\n";
+            md += "> 导出于 " + new Date().toLocaleString() + "，可粘贴回流到 Week_XX.md / Topic Review 笔记\n\n";
+
+            if (notes.length) {
+                md += "## 📝 我的批注（" + notes.length + " 条）\n\n";
+                notes.forEach((n, i) => {
+                    const ch = chapterTitleFor(`[data-note-id="${n.id}"]`);
+                    md += "### 批注 " + (i + 1) + (ch ? "｜" + ch : "") + "\n\n";
+                    md += "> 原文：" + n.text + "\n\n";
+                    md += n.note + "\n\n";
+                });
+            }
+            if (hls.length) {
+                md += "## 🖍️ 高亮摘记（" + hls.length + " 条）\n\n";
+                hls.forEach(h => { md += "- " + h.text + "\n"; });
+            }
+            copyText(md, "📋 已复制 Markdown！可粘贴到 Week_XX.md 知识库。");
+        }
+
+        function copyText(text, okMsg) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => showToast(okMsg), () => legacyCopy(text, okMsg));
+            } else {
+                legacyCopy(text, okMsg);
+            }
+        }
+        function legacyCopy(text, okMsg) {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand("copy"); showToast(okMsg); }
+            catch (e) { showToast("⚠️ 复制失败，请手动选择复制。"); }
+            document.body.removeChild(ta);
+        }
+
+        // ==========================================
+        // TERM LEXICON HOVER CARDS (IPA + Native-style Chunked Pronunciation + Etymology)
+        // Attaches to #main-content span.en / strong whose normalized text matches a key.
+        // ==========================================
+        // @@ZONE:DATA:termLexicon@@
+
+        let lexiconIndex = null;
+        let termCardPinned = false;
+        let termHoverTimer = null;
+        let termHideTimer = null;
+        let currentTermEntry = null;
+
+        function lexiNorm(t) {
+            return (t || "").toLowerCase()
+                .replace(/[–—]/g, "-")
+                .replace(/[“”‘’"']/g, "")
+                .replace(/[\u4e00-\u9fff]/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
+        }
+
+        function buildLexiconIndex() {
+            lexiconIndex = {};
+            // normalize keys too, so "Broca's Area" matches text rendered with a straight apostrophe
+            termLexicon.forEach(e => e.keys.forEach(k => { lexiconIndex[lexiNorm(k)] = e; }));
+        }
+
+        function lookupTerm(rawText) {
+            if (!lexiconIndex) return null;
+            const candidates = [];
+            // candidate 1: full text with parentheticals removed (ASCII and full-width)
+            candidates.push(lexiNorm(rawText.replace(/\(.*?\)/g, "").replace(/（.*?）/g, "")));
+            // candidate 2..n: each parenthetical's inner content ("腺苷（Adenosine）" -> "adenosine")
+            const parens = rawText.match(/[（(]([^）)]*)[）)]/g) || [];
+            parens.forEach(p => candidates.push(lexiNorm(p.slice(1, -1))));
+            for (let c of candidates) {
+                if (!c) continue;
+                c = c.replace(/^the\s+/, "").replace(/[,，].*$/, "").trim();
+                if (!c) continue;
+                if (lexiconIndex[c]) return lexiconIndex[c];
+                // try "/" separated segments ("EEG / ERP" -> "eeg")
+                for (const seg of c.split("/")) {
+                    const t2 = seg.trim();
+                    if (t2 && lexiconIndex[t2]) return lexiconIndex[t2];
+                }
+            }
+            return null;
+        }
+
+        function showTermCard(entry, anchorEl) {
+            currentTermEntry = entry;
+            const card = document.getElementById("term-card");
+            document.getElementById("tc-term").textContent = entry.term;
+            document.getElementById("tc-ipa").textContent = entry.ipa;
+            document.getElementById("tc-chunks").textContent = entry.chunks;
+            document.getElementById("tc-parts").innerHTML = entry.parts;
+            document.getElementById("tc-hook").textContent = entry.hook;
+            card.style.display = "block";
+            const rect = anchorEl.getBoundingClientRect();
+            const cardH = card.offsetHeight;
+            let top = window.scrollY + rect.bottom + 8;
+            // flip above the term when there is no room below
+            if (rect.bottom + 8 + cardH > window.innerHeight) {
+                top = window.scrollY + rect.top - cardH - 8;
+            }
+            const left = window.scrollX + rect.left;
+            const maxLeft = window.scrollX + document.documentElement.clientWidth - card.offsetWidth - 10;
+            card.style.top = Math.max(10, top) + "px";
+            card.style.left = Math.min(Math.max(10, left), Math.max(10, maxLeft)) + "px";
+        }
+
+        function hideTermCard() {
+            termCardPinned = false;
+            const card = document.getElementById("term-card");
+            if (card) card.style.display = "none";
+        }
+        function scheduleHideTermCard() {
+            clearTimeout(termHideTimer);
+            termHideTimer = setTimeout(() => { if (!termCardPinned) hideTermCard(); }, 220);
+        }
+
+        function speakCurrentTerm() {
+            if (!currentTermEntry) return;
+            if (!("speechSynthesis" in window)) { showToast("⚠️ 当前浏览器不支持语音朗读"); return; }
+            window.speechSynthesis.cancel();
+            const sayText = currentTermEntry.term.split("(")[0].replace(/\//g, " ").trim();
+            const u = new SpeechSynthesisUtterance(sayText);
+            u.lang = "en-AU";
+            u.rate = 0.92;
+            window.speechSynthesis.speak(u);
+        }
+
+        function initTermCards() {
+            buildLexiconIndex();
+            const card = document.getElementById("term-card");
+            document.querySelectorAll("#main-content span.en, #main-content strong").forEach(sp => {
+                const entry = lookupTerm(sp.textContent);
+                if (!entry) return;
+                sp.classList.add("lexi");
+                sp.addEventListener("mouseenter", () => {
+                    clearTimeout(termHideTimer);
+                    clearTimeout(termHoverTimer);
+                    termHoverTimer = setTimeout(() => { if (!termCardPinned) showTermCard(entry, sp); }, 350);
+                });
+                sp.addEventListener("mouseleave", () => {
+                    clearTimeout(termHoverTimer);
+                    if (!termCardPinned) scheduleHideTermCard();
+                });
+                sp.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    clearTimeout(termHoverTimer);
+                    termCardPinned = true;
+                    showTermCard(entry, sp);
+                });
+            });
+            card.addEventListener("mouseenter", () => clearTimeout(termHideTimer));
+            card.addEventListener("mouseleave", () => { if (!termCardPinned) scheduleHideTermCard(); });
+            document.getElementById("tc-speak").addEventListener("click", (e) => {
+                e.stopPropagation();
+                speakCurrentTerm();
+            });
+            document.getElementById("tc-ask").addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (currentTermEntry) {
+                    const t = currentTermEntry.term;
+                    hideTermCard();
+                    quickAsk("请帮我深度解析概念：【" + t + "】");
+                }
+            });
+        }
+
+        // ==========================================
+        // ACCESSIBILITY (键盘流：抽认卡 / 灯箱)
+        // ==========================================
+        function initA11y() {
+            const fc = document.getElementById("flashcard-element");
+            if (fc) {
+                fc.addEventListener("keydown", (e) => {
+                    if (e.key === " " || e.key === "Enter") { e.preventDefault(); flipCard(); }
+                    else if (e.key === "ArrowRight") { e.preventDefault(); nextCard(); }
+                    else if (e.key === "ArrowLeft") { e.preventDefault(); prevCard(); }
+                });
+            }
+            const lbClose = document.querySelector("#lightbox-modal .lightbox-close");
+            if (lbClose) {
+                lbClose.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); closeLightbox(e); }
+                });
+            }
+        }
+
+        // ==========================================
+        // PRINT SHEET (beforeprint 生成自测清单 + 强制图片加载)
+        // ==========================================
+        function buildPrintSheet() {
+            document.querySelectorAll("#print-sheet").forEach(el => el.remove());
+            const letters = ["A", "B", "C", "D"];
+            let html = '<h2>附录：自测清单（打印专用）</h2>';
+            html += '<h3>抽认卡 Q→A（共 ' + flashcards.length + ' 张）</h3><ol>';
+            flashcards.forEach(c => {
+                html += '<li style="margin-bottom:8px;"><strong>Q:</strong> ' + c.front + '<br><strong>A:</strong> ' + c.back + '</li>';
+            });
+            html += '</ol><h3>MCQ 答案速查（共 ' + mcqData.length + ' 题）</h3><ol>';
+            mcqData.forEach(m => {
+                html += '<li style="margin-bottom:8px;">' + m.q + '<br><strong>✓ ' + letters[m.ans] + '.</strong> ' + m.opts[m.ans] + '<br><span style="color:#444;">' + m.exp + '</span></li>';
+            });
+            html += '</ol>';
+            const sheet = document.createElement("div");
+            sheet.id = "print-sheet";
+            sheet.className = "print-only";
+            sheet.innerHTML = html;
+            document.getElementById("main-content").appendChild(sheet);
+        }
+
+        window.addEventListener("beforeprint", () => {
+            buildPrintSheet();
+            // 懒加载图片在打印前全部强制加载，否则未滚动到的幻灯片会打印空白
+            document.querySelectorAll('img[loading="lazy"]').forEach(img => { img.loading = "eager"; });
+        });
+        window.addEventListener("afterprint", () => {
+            const el = document.getElementById("print-sheet");
+            if (el) el.remove();
+        });
+
+        // ==========================================
+        // IN-PAGE GROK STUDY ASSISTANT
+        // ==========================================
+        let chatHistory = [];
+        let lastDiscussedTopic = null;
+        let grokMessages = [];
+        let grokConversationId = localStorage.getItem(LS.grokConversation) || "";
+        let grokLectureId = localStorage.getItem(LS.grokLecture) || ((ASSISTANT_META && ASSISTANT_META.default_lecture) || "");
+        let grokGenerating = false;
+        let grokAbort = null;
+        let grokLastPayload = null;
+        let grokVariant = "low";
+        let grokStatus = { auth: "unknown" };
+
+        function defaultLectureId() {
+            if (grokLectureId) return grokLectureId;
+            const lectures = (ASSISTANT_META && ASSISTANT_META.lectures) || [];
+            return (lectures[0] && lectures[0].id) || "";
+        }
+
+        function setGrokVariant(v) {
+            const allowed = { low: 1, medium: 1, high: 1 };
+            grokVariant = allowed[v] ? v : "low";
+            localStorage.setItem(LS.grokVariant, grokVariant);
+            const sel = document.getElementById("grok-variant-select");
+            if (sel && sel.value !== grokVariant) sel.value = grokVariant;
+            paintStatus();
+        }
+
+        function currentSectionId() {
+            const sel = window.getSelection();
+            if (sel && !sel.isCollapsed && sel.anchorNode) {
+                const el = sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement;
+                const sec = el && el.closest && el.closest("#main-content section[id]");
+                if (sec) return sec.id;
+            }
+            const sections = document.querySelectorAll("#main-content section[id]");
+            for (const s of sections) {
+                const r = s.getBoundingClientRect();
+                if (r.top < 200 && r.bottom > 80) return s.id;
+            }
+            return sections[0] ? sections[0].id : "";
+        }
+
+        function setGenerating(on) {
+            grokGenerating = on;
+            const stopBtn = document.getElementById("btn-stop-grok");
+            const sendBtn = document.getElementById("btn-send-grok");
+            if (stopBtn) stopBtn.style.display = on ? "flex" : "none";
+            if (sendBtn) sendBtn.style.display = on ? "none" : "flex";
+        }
+
+        function paintStatus() {
+            const badge = document.getElementById("api-status-badge");
+            const bar = document.getElementById("assistant-status-text");
+            const lec = document.getElementById("assistant-lecture-label");
+            const mat = document.getElementById("assistant-materials-label");
+            const st = grokStatus || {};
+            let label = "未连接";
+            let color = "var(--text-muted)";
+            if (location.protocol === "file:") {
+                label = "请双击「打开讲义」";
+            } else if (st.auth === "ok") {
+                label = "已连接 " + (st.model || "Grok");
+                color = "var(--success)";
+            } else if (st.auth === "missing") {
+                label = "未登录或已过期";
+                color = "var(--danger)";
+            } else if (st.opencode && st.opencode.healthy === false) {
+                label = "OpenCode 未启动";
+                color = "var(--danger)";
+            } else if (st.error) {
+                label = "连接失败";
+                color = "var(--danger)";
+            }
+            if (grokGenerating) {
+                label = "正在生成";
+                color = "var(--primary)";
+            }
+            if (badge) {
+                badge.textContent = label;
+                badge.style.color = color;
+            }
+            if (bar) {
+                const vLabel = grokVariant === "high" ? "高" : (grokVariant === "medium" ? "中" : "低");
+                bar.innerHTML = "<strong>" + escapeHtml(label) + "</strong> · 本讲 " + escapeHtml(defaultLectureId() || "未指定") + " · 推理" + vLabel;
+            }
+            if (lec) {
+                const lectures = (ASSISTANT_META && ASSISTANT_META.lectures) || [];
+                const cur = lectures.find(l => l.id === defaultLectureId()) || lectures[0];
+                lec.textContent = cur ? ("讲次：" + cur.id + " " + (cur.name || "")) : "本科目尚未注册讲次资料；仍可发送当前章节。";
+            }
+            if (mat) {
+                const m = st.materials;
+                if (!m) {
+                    mat.textContent = "资料状态：用「打开讲义」进入后显示课件与阅读是否已加载。";
+                } else {
+                    const slides = m.slides ? (m.slides.pages + " 页课件 / 文字 " + m.slides.text_status + " / 图 " + m.slides.images_status) : "无课件";
+                    const readings = (m.readings || []).map(r => (r.label || "阅读") + " " + r.pages + " 页").join("；") || "无指定阅读";
+                    const err = (m.errors || []).join("；");
+                    mat.textContent = "资料：" + slides + " · " + readings + (err ? " · " + err : "");
+                }
+            }
+        }
+
+        async function refreshAssistantStatus() {
+            if (location.protocol === "file:") {
+                grokStatus = { auth: "file", error: "file" };
+                paintStatus();
+                showToast("请双击「打开讲义」。");
+                return;
+            }
+            try {
+                const url = ASSISTANT_ORIGIN + "/api/status?doc_id=" + encodeURIComponent(DOC_ID) + "&lecture_id=" + encodeURIComponent(defaultLectureId());
+                const res = await fetch(url, { headers: { "Accept": "application/json" } });
+                grokStatus = await res.json();
+            } catch (e) {
+                grokStatus = { auth: "offline", error: "offline" };
+            }
+            paintStatus();
+        }
+
+        function toggleDSHDrawer(forceState) {
+            const drawer = document.getElementById("dsh-chat-drawer");
+            const wasOpen = drawer.classList.contains("open");
+            if (typeof forceState === "boolean") {
+                if (forceState) drawer.classList.add("open");
+                else drawer.classList.remove("open");
+            } else {
+                drawer.classList.toggle("open");
+            }
+            if (!drawer.classList.contains("open")) {
+                // Docked CSS must not keep a deliberately closed panel visible.
+                document.body.classList.remove("assistant-docked");
+            } else {
+                if (window.innerWidth > 900) {
+                    document.body.classList.add("assistant-docked");
+                    const btn = document.getElementById("btn-dock-assistant");
+                    if (btn) {
+                        btn.textContent = "🔓 浮动";
+                        btn.style.color = "var(--primary-light)";
+                    }
+                }
+                document.getElementById("chatInput").focus();
+                if (!wasOpen) refreshAssistantStatus();
+            }
+        }
+
+        function toggleDockAssistant() {
+            const body = document.body;
+            const isDocked = body.classList.toggle("assistant-docked");
+            const btn = document.getElementById("btn-dock-assistant");
+            if (isDocked) {
+                btn.textContent = "🔓 浮动";
+                btn.style.color = "var(--primary-light)";
+                toggleDSHDrawer(true);
+                localStorage.setItem(LS.docked, "true");
+                showToast("已开启固定分屏（左侧讲义 + 右侧助手）。");
+            } else {
+                btn.textContent = "📌 固定分屏";
+                btn.style.color = "";
+                localStorage.setItem(LS.docked, "false");
+                showToast("已切换为浮动抽屉。");
+            }
+        }
+
+        function savePersistentChat() {
+            localStorage.setItem(LS.grokChat, JSON.stringify(grokMessages));
+            if (grokConversationId) localStorage.setItem(LS.grokConversation, grokConversationId);
+            if (grokLectureId) localStorage.setItem(LS.grokLecture, grokLectureId);
+        }
+
+        function loadPersistentChat() {
+            grokLectureId = localStorage.getItem(LS.grokLecture) || defaultLectureId();
+            grokConversationId = localStorage.getItem(LS.grokConversation) || "";
+            setGrokVariant(localStorage.getItem(LS.grokVariant) || "low");
+            const saved = localStorage.getItem(LS.grokChat);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        grokMessages = parsed;
+                        const container = document.getElementById("chatMessages");
+                        container.innerHTML = "";
+                        grokMessages.forEach(msg => {
+                            appendChatMessage(msg.role, msg.content, {
+                                offline: !!msg.offline,
+                                error: !!msg.error,
+                                restore: true,
+                                elapsedMs: msg.elapsedMs,
+                                firstMs: msg.firstMs,
+                                variant: msg.variant,
+                                hadImage: msg.hadImage
+                            });
+                        });
+                    }
+                } catch (e) {}
+            }
+            if (localStorage.getItem(LS.docked) === "true" && window.innerWidth > 1024) {
+                document.body.classList.add("assistant-docked");
+                document.getElementById("dsh-chat-drawer").classList.add("open");
+                const btn = document.getElementById("btn-dock-assistant");
+                if (btn) {
+                    btn.textContent = "🔓 浮动";
+                    btn.style.color = "var(--primary-light)";
+                }
+            }
+        }
+
+        function toggleAPISettings() {
+            const box = document.getElementById("dsh-api-settings");
+            box.style.display = box.style.display === "none" ? "block" : "none";
+            if (box.style.display === "block") refreshAssistantStatus();
+        }
+
+        function handleChatKeyDown(e) {
+            if (e.isComposing || e.keyCode === 229) return;
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendUserMessage();
+            }
+        }
+
+        function sendSelectionToInPageAI() {
+            const selection = window.getSelection();
+            const text = (selection && !selection.isCollapsed) ? selection.toString().trim() : (activeHighlightEl ? activeHighlightEl.textContent : "");
+            if (!text) return;
+            document.getElementById("text-selection-toolbar").style.display = "none";
+            const selectedSection = activeHighlightEl && activeHighlightEl.closest("#main-content section[id]");
+            askQuestionDirectly("请解释选中的内容：\n" + text, {
+                selected: text,
+                section_id: (selection && !selection.isCollapsed) ? currentSectionId() : (selectedSection ? selectedSection.id : currentSectionId())
+            });
+        }
+
+        function quickAsk(qText) {
+            askQuestionDirectly(qText);
+        }
+
+        function sendUserMessage() {
+            const input = document.getElementById("chatInput");
+            const query = input.value.trim();
+            if (!query) return;
+            if (grokGenerating) {
+                showToast("正在生成，请先停止或等它结束。");
+                return;
+            }
+            input.value = "";
+            askQuestionDirectly(query);
+        }
+
+        function checkMyUnderstanding() {
+            const selection = window.getSelection();
+            const selected = (selection && !selection.isCollapsed) ? selection.toString().trim() : "";
+            const typed = document.getElementById("chatInput").value.trim();
+            const text = selected || typed;
+            if (!text) {
+                showToast("先划选或输入你的理解，再点检查。");
+                return;
+            }
+            if (grokGenerating) {
+                showToast("正在生成，请先停止或等它结束。");
+                return;
+            }
+            document.getElementById("chatInput").value = "";
+            askQuestionDirectly("请检查我的理解，指出具体遗漏与混淆：\n" + text, { selected: selected });
+        }
+
+        function askAboutFigure(fig, index) {
+            const img = fig.querySelector("img");
+            if (!img) return;
+            const src = img.getAttribute("src") || "";
+            const cap = ((fig.querySelector("figcaption") || {}).textContent || img.alt || "").replace(/\s+/g, " ").trim();
+            let image;
+            if (src.indexOf("data:image/") === 0) {
+                image = { kind: "data", data_url: src };
+            } else if (src.indexOf("assets/") === 0) {
+                image = { kind: "figure", id: "fig-" + String(index + 1).padStart(2, "0"), file: src };
+            } else {
+                showToast("无法发送这张图。");
+                return;
+            }
+            const section = fig.closest("#main-content section[id]");
+            askQuestionDirectly("请根据实际图片解释： " + cap, {
+                image: image,
+                section_id: section ? section.id : currentSectionId()
+            });
+        }
+
+        function initFigureAskButtons() {
+            document.querySelectorAll("#main-content figure").forEach((fig, i) => {
+                if (fig.querySelector(".ask-figure-btn")) return;
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "ask-figure-btn";
+                btn.textContent = "问这张图";
+                btn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    askAboutFigure(fig, i);
+                });
+                fig.appendChild(btn);
+            });
+        }
+
+        async function openRegisteredSource(kind) {
+            if (location.protocol === "file:") {
+                showToast("请双击「打开讲义」后再打开课件或阅读。");
+                return;
+            }
+            try {
+                const res = await fetch(ASSISTANT_ORIGIN + "/api/open-source", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ doc_id: DOC_ID, lecture_id: defaultLectureId(), kind: kind, reading_index: 0 })
+                });
+                const data = await res.json();
+                if (!res.ok) showToast(data.error || "无法打开资料");
+            } catch (e) {
+                showToast("无法打开资料：先启动学习助手。");
+            }
+        }
+
+        function newGrokConversation() {
+            grokConversationId = "";
+            grokMessages = [];
+            lastDiscussedTopic = null;
+            localStorage.removeItem(LS.grokConversation);
+            localStorage.removeItem(LS.grokChat);
+            const container = document.getElementById("chatMessages");
+            container.innerHTML = '<div class="chat-msg assistant"><div class="msg-bubble"><p>新对话已开始。高亮和批注没有改动。</p></div></div>';
+            showToast("已新建对话。");
+        }
+
+        function retryLastGrok() {
+            if (!grokLastPayload) {
+                showToast("没有可重试的问题。");
+                return;
+            }
+            askQuestionDirectly(grokLastPayload.text, { retry: true, image: grokLastPayload.image, selected: grokLastPayload.selected_text });
+        }
+
+        async function stopGeneration() {
+            if (grokAbort) grokAbort.abort();
+            if (location.protocol !== "file:" && grokConversationId) {
+                try {
+                    await fetch(ASSISTANT_ORIGIN + "/api/chat/stop", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            doc_id: DOC_ID,
+                            lecture_id: defaultLectureId(),
+                            conversation_id: grokConversationId
+                        })
+                    });
+                } catch (e) {}
+            }
+            setGenerating(false);
+            paintStatus();
+        }
+
+        async function readSSE(response, onEvent) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let buf = "";
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += decoder.decode(value, { stream: true });
+                const blocks = buf.split("\n\n");
+                buf = blocks.pop();
+                for (const block of blocks) {
+                    let event = "message";
+                    let data = "";
+                    block.split("\n").forEach(function (line) {
+                        if (line.indexOf("event: ") === 0) event = line.slice(7).trim();
+                        if (line.indexOf("data: ") === 0) data += line.slice(6);
+                    });
+                    if (!data) continue;
+                    try { onEvent(event, JSON.parse(data)); } catch (e) {}
+                }
+            }
+        }
+
+        async function askQuestionDirectly(query, extra) {
+            extra = extra || {};
+            // Capture the originating section before drawer reflow changes the viewport.
+            const originSectionId = extra.section_id || currentSectionId();
+            if (grokGenerating) {
+                showToast("正在生成，请先停止或等它结束。");
+                return;
+            }
+            setGenerating(true);
+            toggleDSHDrawer(true);
+            if (!extra.retry) {
+                appendChatMessage("user", query);
+                grokMessages.push({ role: "user", content: query });
+                savePersistentChat();
+            }
+            const payload = {
+                doc_id: DOC_ID,
+                lecture_id: defaultLectureId(),
+                conversation_id: grokConversationId || "",
+                section_id: originSectionId,
+                selected_text: extra.selected || "",
+                text: query,
+                image: extra.image || null,
+                variant: grokVariant
+            };
+            grokLastPayload = payload;
+            const waitText = extra.image
+                ? "正在读图并根据本讲资料回答（推理" + (grokVariant === "high" ? "高" : (grokVariant === "medium" ? "中" : "低")) + "档，可能要等半分钟）…"
+                : "正在根据本讲资料回答（推理" + (grokVariant === "high" ? "高" : (grokVariant === "medium" ? "中" : "低")) + "档）…";
+            const typingMsg = appendChatMessage("assistant", waitText, { typing: true });
+            const bubble = typingMsg.querySelector(".msg-bubble");
+            if (location.protocol === "file:") {
+                bubble.classList.add("error");
+                bubble.textContent = "请双击「打开讲义」。不要把这次失败当成课程答案。";
+                grokMessages.push({ role: "assistant", content: bubble.textContent, error: true });
+                savePersistentChat();
+                setGenerating(false);
+                return;
+            }
+            paintStatus();
+            grokAbort = new AbortController();
+            let fullText = "";
+            let hadError = false;
+            const t0 = Date.now();
+            let firstMs = null;
+            try {
+                const response = await fetch(ASSISTANT_ORIGIN + "/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                    signal: grokAbort.signal
+                });
+                if (!response.ok) {
+                    let msg = "HTTP " + response.status;
+                    try {
+                        const err = await response.json();
+                        msg = err.error || msg;
+                    } catch (e) {}
+                    throw new Error(msg);
+                }
+                await readSSE(response, function (event, data) {
+                    if (event === "status") {
+                        if (data.conversation_id) {
+                            grokConversationId = data.conversation_id;
+                            localStorage.setItem(LS.grokConversation, grokConversationId);
+                        }
+                        if (data.materials) grokStatus.materials = data.materials;
+                        if (data.truncated) {
+                            bubble.textContent = "材料较多，已按本讲缩小范围。正在生成…";
+                        }
+                    } else if (event === "delta") {
+                        if (firstMs == null) firstMs = Date.now() - t0;
+                        fullText += (data.text || "");
+                        bubble.classList.remove("error");
+                        bubble.style.fontStyle = "";
+                        bubble.innerHTML = renderGrokMarkdown(fullText);
+                        scrollChatToBottom();
+                    } else if (event === "error") {
+                        hadError = true;
+                        bubble.classList.add("error");
+                        bubble.textContent = data.message || "Grok 请求失败。";
+                    } else if (event === "done") {
+                        if (data.conversation_id) grokConversationId = data.conversation_id;
+                    }
+                });
+            } catch (err) {
+                if (err && err.name === "AbortError") {
+                    if (!fullText) {
+                        bubble.classList.add("error");
+                        bubble.textContent = "已停止生成。";
+                    }
+                } else {
+                    hadError = true;
+                    bubble.classList.add("error");
+                    bubble.textContent = (err && err.message) ? err.message : "无法连接本机助手。请双击「打开讲义」。";
+                }
+            } finally {
+                setGenerating(false);
+                paintStatus();
+                grokAbort = null;
+            }
+            const content = fullText || bubble.textContent || "";
+            const elapsedMs = Date.now() - t0;
+            grokMessages.push({
+                role: "assistant",
+                content: content,
+                error: hadError,
+                elapsedMs: elapsedMs,
+                firstMs: firstMs,
+                variant: grokVariant,
+                hadImage: !!(extra && extra.image)
+            });
+            attachReplyTiming(typingMsg, {
+                elapsedMs: elapsedMs,
+                firstMs: firstMs,
+                variant: grokVariant,
+                hadImage: !!(extra && extra.image)
+            });
+            savePersistentChat();
+            scrollChatToBottom();
+        }
+
+        function escapeHtml(str) {
+            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        function tidyChatMath(inner) {
+            const cmds = {
+                times: "×", cdot: "·", equiv: "≡", neq: "≠", ne: "≠",
+                leq: "≤", le: "≤", geq: "≥", ge: "≥",
+                Delta: "Δ", alpha: "α", beta: "β", gamma: "γ",
+                theta: "θ", lambda: "λ", mu: "μ", pi: "π",
+                sigma: "σ", omega: "ω", Omega: "Ω", infty: "∞",
+                pm: "±", to: "→", approx: "≈", sum: "∑", prod: "∏",
+                int: "∫", partial: "∂", ldots: "…", cdots: "⋯",
+                left: "", right: "", mathrm: "", text: "",
+                bar: "", hat: "", overline: "", quad: " ", qquad: " "
+            };
+            cmds["right" + "arrow"] = "→";
+            cmds["Right" + "arrow"] = "⇒";
+            cmds["left" + "arrow"] = "←";
+            let t = String(inner || "");
+            const fracName = "frac";
+            t = t.replace(new RegExp("\\\\" + fracName + "\\{([^{}]+)\\}\\{([^{}]+)\\}", "g"), "($1)/($2)");
+            t = t.replace(/\\([A-Za-z]+)/g, function (_, name) {
+                return Object.prototype.hasOwnProperty.call(cmds, name) ? cmds[name] : name;
+            });
+            t = t.replace(/([A-Za-z0-9)])\^\{([^{}]+)\}/g, "$1<sup>$2</sup>");
+            t = t.replace(/([A-Za-z0-9)])\^([A-Za-z0-9*])/g, "$1<sup>$2</sup>");
+            t = t.replace(/([A-Za-z0-9)])_\{([^{}]+)\}/g, "$1<sub>$2</sub>");
+            t = t.replace(/([A-Za-z0-9)])_([A-Za-z0-9])/g, "$1<sub>$2</sub>");
+            t = t.replace(/[{}]/g, "");
+            t = t.replace(/\\/g, "");
+            return t;
+        }
+
+        function convertChatMath(s) {
+            function wrap(inner, display) {
+                return '<span class="chat-math' + (display ? " display" : "") + '">' + tidyChatMath(inner) + "</span>";
+            }
+            const D = String.fromCharCode(36);
+            const fracName = "frac";
+            s = s.replace(/\\\[([\s\S]+?)\\\]/g, function (_, m) { return wrap(m, true); });
+            s = s.replace(new RegExp(D + D + "([\\s\\S]+?)" + D + D, "g"), function (_, m) { return wrap(m, true); });
+            s = s.replace(/\\\(([\s\S]+?)\\\)/g, function (_, m) { return wrap(m, false); });
+            s = s.replace(new RegExp(D + "([^" + D + "\\n]+)" + D, "g"), function (_, m) { return wrap(m, false); });
+            s = s.replace(new RegExp("\\\\" + fracName + "\\{([^{}]+)\\}\\{([^{}]+)\\}", "g"), function (_, a, b) {
+                return wrap("(" + a + ")/(" + b + ")", false);
+            });
+            return s;
+        }
+
+        function renderGrokBlocks(s) {
+            const lines = String(s || "").split("\n");
+            const out = [];
+            let i = 0;
+            while (i < lines.length) {
+                const line = lines[i];
+                const heading = /^(#{1,3}) +(.+)$/.exec(line);
+                if (heading) {
+                    out.push("<h4>" + heading[2] + "</h4>");
+                    i++;
+                    continue;
+                }
+                const ulItem = /^[-*•] +(.+)$/.exec(line);
+                const olItem = /^(\d+)\. +(.+)$/.exec(line);
+                if (ulItem || olItem) {
+                    const ordered = !!olItem;
+                    const items = [];
+                    while (i < lines.length) {
+                        const L = lines[i];
+                        if (L === "") break;
+                        const nextUl = /^[-*•] +(.+)$/.exec(L);
+                        const nextOl = /^(\d+)\. +(.+)$/.exec(L);
+                        if (!ordered && nextUl) {
+                            items.push(nextUl[1]);
+                            i++;
+                            continue;
+                        }
+                        if (ordered && nextOl) {
+                            items.push(nextOl[2]);
+                            i++;
+                            continue;
+                        }
+                        if ((!ordered && nextOl) || (ordered && nextUl)) break;
+                        if (items.length && !/^(#{1,3}) /.test(L)) {
+                            items[items.length - 1] += "<br>" + L;
+                            i++;
+                            continue;
+                        }
+                        break;
+                    }
+                    const tag = ordered ? "ol" : "ul";
+                    out.push("<" + tag + ">" + items.map(function (it) { return "<li>" + it + "</li>"; }).join("") + "</" + tag + ">");
+                    continue;
+                }
+                if (line === "") {
+                    i++;
+                    continue;
+                }
+                const buf = [line];
+                i++;
+                while (i < lines.length) {
+                    const L = lines[i];
+                    if (L === "") {
+                        i++;
+                        break;
+                    }
+                    if (/^(#{1,3}) /.test(L) || /^[-*•] /.test(L) || /^\d+\. /.test(L)) break;
+                    buf.push(L);
+                    i++;
+                }
+                out.push("<p>" + buf.join("<br>") + "</p>");
+            }
+            return out.join("");
+        }
+
+        function renderGrokMarkdown(text) {
+            if (!text) return "";
+            const fences = [];
+            let s = escapeHtml(text);
+            s = s.replace(/```([\s\S]*?)```/g, function (_, code) {
+                fences.push("<pre><code>" + code + "</code></pre>");
+                return "\u0000F" + (fences.length - 1) + "\u0000";
+            });
+            s = convertChatMath(s);
+            s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+            s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+            s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+            s = renderGrokBlocks(s);
+            s = s.replace(/\u0000F(\d+)\u0000/g, function (_, idx) { return fences[Number(idx)] || ""; });
+            return s;
+        }
+
+        function formatMarkdown(text) {
+            return renderGrokMarkdown(text);
+        }
+
+        function appendChatMessage(role, content, opts) {
+            opts = opts || {};
+            const container = document.getElementById("chatMessages");
+            const msgDiv = document.createElement("div");
+            msgDiv.className = "chat-msg " + role;
+            const bubble = document.createElement("div");
+            bubble.className = "msg-bubble";
+            if (opts.typing) {
+                bubble.style.fontStyle = "italic";
+                bubble.style.color = "var(--text-muted)";
+                bubble.textContent = content || "正在根据本讲资料回答…";
+            } else if (role === "user") {
+                bubble.textContent = content;
+            } else if (opts.offline) {
+                const tag = document.createElement("div");
+                tag.className = "msg-offline-tag";
+                tag.textContent = "离线词典（不是 Grok）";
+                bubble.appendChild(tag);
+                const body = document.createElement("div");
+                body.innerHTML = content;
+                bubble.appendChild(body);
+            } else if (opts.error) {
+                bubble.classList.add("error");
+                bubble.textContent = content;
+            } else {
+                bubble.innerHTML = renderGrokMarkdown(content);
+            }
+            msgDiv.appendChild(bubble);
+            if (opts.elapsedMs && role === "assistant" && !opts.typing) {
+                attachReplyTiming(msgDiv, opts);
+            }
+            container.appendChild(msgDiv);
+            scrollChatToBottom();
+            return msgDiv;
+        }
+
+        function formatReplySeconds(ms) {
+            if (!ms || ms < 0) return "";
+            return (ms / 1000).toFixed(1).replace(/\.0$/, "") + " 秒";
+        }
+
+        function attachReplyTiming(msgDiv, info) {
+            if (!msgDiv || !info || !info.elapsedMs) return;
+            let meta = msgDiv.querySelector(".msg-meta");
+            if (!meta) {
+                meta = document.createElement("div");
+                meta.className = "msg-meta";
+                msgDiv.appendChild(meta);
+            }
+            const v = info.variant === "high" ? "高" : (info.variant === "medium" ? "中" : "低");
+            let line = "用时 " + formatReplySeconds(info.elapsedMs) + " · 推理" + v + "档";
+            if (info.firstMs) line += " · 出字 " + formatReplySeconds(info.firstMs);
+            if (info.hadImage) line += " · 含图";
+            meta.textContent = line;
+        }
+
+        function scrollChatToBottom() {
+            const container = document.getElementById("chatMessages");
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearChatHistory() {
+            newGrokConversation();
+        }
+
+        // ==========================================
+        // OFFLINE EXPERT DICTIONARY (Fallback Knowledge Base)
+        // keys: lowercase trigger words; matched against the user's concept
+        // ==========================================
+        // @@ZONE:DATA:psycDict@@
+
+        // ==========================================
+        // MASTER COMPREHENSIVE LOCAL REASONING ENGINE
+        // ==========================================
+        // @@ZONE:AI_ENGINE@@
+
+        let toastTimer = null;
+        function showToast(msg) {
+            const toast = document.getElementById("toast-msg");
+            if (!toast) return;
+            toast.textContent = msg;
+            toast.style.display = "block";
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.style.display = "none";
+            }, 2600);
+        }
+
+        // Initialize immediately — this <script> is at the end of <body>, so the DOM is already parsed.
+        // (window.onload would needlessly wait for all lazy-loaded slide images before restoring highlights.)
+        (function initApp() {
+            if (maybeRedirectToLocalAssistant()) return;
+            updateFC();
+            initMCQ();
+            restoreHighlights();
+            loadNotes();
+            restoreNotes();
+            updateNoteCount();
+            initTermCards();
+            initA11y();
+            loadPersistentChat();
+            setGrokVariant(localStorage.getItem(LS.grokVariant) || "low");
+            initFigureAskButtons();
+            paintStatus();
+            refreshAssistantStatus();
+            // On narrow screens the sidebar starts hidden — the pill should read "open", not "collapse"
+            if (window.innerWidth <= 900) {
+                const pillIcon = document.getElementById("sidebar-pill-icon");
+                const pillText = document.getElementById("sidebar-pill-text");
+                if (pillIcon && pillText) {
+                    pillIcon.textContent = "☰";
+                    pillText.textContent = "目录";
+                }
+            }
+        })();
+    </script>
+</body>
+</html>
