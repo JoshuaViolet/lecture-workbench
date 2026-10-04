@@ -1256,8 +1256,9 @@
         // DOCUMENT IDENTITY & STORAGE NAMESPACE
         // DOC_ID 派生全部 localStorage 键：同一 origin 下多份讲义互不覆盖
         // ==========================================
-        const DOC_ID = "{{DOC_ID}}";
-        const APP_ID = "{{APP_ID}}";
+        const DOC_ID = {{DOC_ID_JSON}};
+        const APP_ID = {{APP_ID_JSON}};
+        const GUIDE_TITLE = {{GUIDE_TITLE_JSON}};
         const LS = {
             theme: DOC_ID + "_theme",
             sidebar: DOC_ID + "_sidebar_collapsed",
@@ -1377,6 +1378,7 @@
 
         function initMCQ() {
             const container = document.getElementById("mcq-app");
+            if (!container) return;   // practice widgets are optional
             container.innerHTML = "";
             mcqData.forEach((item, qIdx) => {
                 const card = document.createElement("div");
@@ -1427,17 +1429,22 @@
                 allOpts[correctIdx].classList.add("correct");
             }
 
-            document.getElementById("mcq-score").textContent = userScore;
-            document.getElementById("mcq-done").textContent = answeredQuestions.size;
+            setText("mcq-score", userScore);
+            setText("mcq-done", answeredQuestions.size);
             document.getElementById(`mcq-exp-${qIdx}`).style.display = "block";
         }
 
         function resetMCQ() {
             userScore = 0;
             answeredQuestions.clear();
-            document.getElementById("mcq-score").textContent = "0";
-            document.getElementById("mcq-done").textContent = "0";
+            setText("mcq-score", 0);
+            setText("mcq-done", 0);
             initMCQ();
+        }
+
+        function setText(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
         }
 
         // Active Recall Subjective Toggle
@@ -1957,7 +1964,7 @@
             const hls = JSON.parse(localStorage.getItem(LS.highlights) || "[]");
             if (!notes.length && !hls.length) { showToast("⚠️ 还没有任何批注或高亮。"); return; }
 
-            let md = "# {{SIDEBAR_TITLE}} · 我的批注与高亮\n\n";
+            let md = "# " + GUIDE_TITLE + " · 我的批注与高亮\n\n";
             md += "> 导出于 " + new Date().toLocaleString() + "\n\n";
 
             if (notes.length) {

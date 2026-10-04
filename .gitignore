@@ -13,3 +13,4 @@ __pycache__/
 # Only content.html is source; everything else *.html under subjects/ is build output.
 subjects/**/*.html
 !subjects/**/content.html
+.pytest_cache/
