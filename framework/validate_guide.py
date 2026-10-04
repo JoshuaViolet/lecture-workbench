@@ -3,14 +3,14 @@
 validate_guide.py — 学习指南三合一验证器
 用法: python3 validate_guide.py <target.html>
 检查: 静态回归(锚点/LaTeX/图片/id交叉/处理函数/HTML配对/占位符/JS语法)
-      + AI 引擎动态路由 + 术语卡覆盖审计
+      + 术语卡覆盖审计
 退出码: 0 = 全绿; 1 = 有失败项
 """
 import re, os, sys, subprocess, tempfile, json
 
 VOID = {'area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr'}
 
-def run_node(js_source, label):
+def run_node(js_source):
     with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
         f.write(js_source)
         tmp = f.name
@@ -42,7 +42,7 @@ def main():
     check("可见区无 LaTeX 残留", not tex, str(tex[:3]))
 
     # 数据/脚本区 LaTeX 扫描（可见区检查剥离 <script> 的盲区补充：
-    # data.js 数组与 ai_engine 字符串渲染后同样面向用户）
+    # data.js 数组渲染后同样面向用户）
     sm_raw = re.search(r'<script>(.*)</script>', html, re.S)
     script_src = sm_raw.group(1) if sm_raw else ""
     script_tex = re.findall(r'\$(?!\d|\{)[^$\n]{1,60}\$', script_src)
@@ -82,36 +82,12 @@ def main():
     check("DOC_ID/LS 存储命名空间存在", 'const DOC_ID = "' in html and "const LS = {" in html)
 
     sm = re.search(r'<script>(.*)</script>', html, re.S)
-    ok, out = run_node("// syntax check only\n" + sm.group(1), "syntax")
-    # node 直接执行会炸（无 DOM），改用 node --check
+    # 只做语法检查：页面脚本依赖 DOM，不能直接用 node 执行
     with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
         f.write(sm.group(1)); tmp = f.name
     r = subprocess.run(["node", "--check", tmp], capture_output=True, text=True)
     os.unlink(tmp)
     check("JS 语法 (node --check)", r.returncode == 0, r.stderr.strip()[:200])
-
-    print("--- AI 引擎动态路由 ---")
-    if "const psycDict" in html and "generateComprehensiveLocalAIResponse" in html:
-        d = re.search(r'(const psycDict = \[.*?\n        \];)', sm.group(1), re.S).group(1)
-        f_ = re.search(r'(function generateComprehensiveLocalAIResponse\(rawQuery\) \{.*?\n        \})', sm.group(1), re.S).group(1)
-        # 动态提取本页面的 quickAsk 题目 + 词典条目 + 追问 + 兜底测试
-        chips = re.findall(r"quickAsk\(['\"](.*?)['\"]\)", html)
-        test_seq = chips[:6] if chips else []
-        test_seq += ["这个是什么意思", "能详细说说吗", "一个完全无关的奇怪问题 xyz"]
-        test_js = "let lastDiscussedTopic = null;\n" + d + "\n" + f_ + "\nconst seq = " + json.dumps(test_seq, ensure_ascii=False) + """;
-let fail = 0;
-for (const t of seq) {
-  try { const r = generateComprehensiveLocalAIResponse(t);
-        if (!r || r.includes("undefined")) { fail++; console.log("BAD |", t); }
-        else console.log("OK  |", t); }
-  catch (e) { fail++; console.log("ERR |", t, "=>", e.message); }
-}
-process.exit(fail ? 1 : 0);
-"""
-        ok, out = run_node(test_js, "engine")
-        check("引擎路由测试（10 条顺序用例）", ok, "\n" + out)
-    else:
-        print("  (跳过：无 psycDict/引擎)")
 
     print("--- 术语卡覆盖审计 ---")
     if "const termLexicon" in html:
@@ -123,12 +99,8 @@ process.exit(fail ? 1 : 0);
             t = re.sub(r'<[^>]+>', '', m2[0] or m2[1]).strip()
             if t: texts.add(t)
         audit_js = lex + "\n" + funcs + "\nbuildLexiconIndex();\nconst texts = " + json.dumps(sorted(texts), ensure_ascii=False) + ";\nlet hit=0, miss=[]; for (const t of texts) { if (lookupTerm(t)) hit++; else miss.push(t); } console.log('HITS ' + hit + '/' + texts.length);\n"
-        # 科目级放行清单（lexicon_allowlist.txt，与目标文件同目录）+ 内置通用清单
-        builtin = ["原讲义", "Slide", "Bone", "Insects", "Jellyfish", "Hardware", "Software",
-                   "Mechanism", "Causality", "Feeding", "Fighting", "Fleeing", "Mating",
-                   "Fight or Flight", "Rest and Digest", "Widening", "Awake", "4 E", "4 F",
-                   'The "D', "NREM", "10%", "302", "860"]
-        allow = list(builtin)
+        # 科目级放行清单（lexicon_allowlist.txt，与目标文件同目录）
+        allow = []
         allow_path = os.path.join(base, "lexicon_allowlist.txt")
         if os.path.exists(allow_path):
             allow += [ln.strip() for ln in open(allow_path, encoding="utf-8")
@@ -136,7 +108,7 @@ process.exit(fail ? 1 : 0);
         audit_js += "const allow = " + json.dumps(allow, ensure_ascii=False) + ";\n"
         audit_js += "const realMiss = miss.filter(t => /[A-Za-z]{4,}/.test(t) && !allow.some(a => t.includes(a)));\n"
         audit_js += "if (realMiss.length) { console.log('SUSPECT MISS:'); realMiss.forEach(t => console.log('  ' + t)); process.exit(1); } console.log('可疑漏配: 无');\n"
-        ok, out = run_node(audit_js, "lexicon")
+        ok, out = run_node(audit_js)
         print("  " + out.replace("\n", "\n  "))
         check("术语卡覆盖率（无可疑漏配）", ok)
     else:

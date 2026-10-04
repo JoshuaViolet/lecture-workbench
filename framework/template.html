@@ -156,8 +156,6 @@
             margin-right: auto;
             flex: 1;
             padding: 48px 56px;
-            /* 右侧让出助手入口槽，避免 fixed FAB 压在正文上（不是页底 padding 遮字） */
-            padding-right: 168px;
             max-width: 1120px;
             width: calc(100% - 320px);
             transition: margin 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.3s ease, padding 0.3s ease;
@@ -181,7 +179,6 @@
             margin-right: auto !important;
             max-width: 1060px !important;
             padding: 56px 32px !important;
-            padding-right: 168px !important;
             width: 100% !important;
         }
 
@@ -306,16 +303,6 @@
             margin: 8px 0;
             font-size: 0.82rem;
         }
-        #tc-ask {
-            background: var(--primary);
-            color: #ffffff;
-            border: none;
-            border-radius: 6px;
-            padding: 5px 12px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            cursor: pointer;
-        }
 
         /* Note Editor Popover */
         #note-editor {
@@ -397,309 +384,6 @@
         [data-theme="dark"] .user-hl {
             background-color: #a16207 !important;
             color: #fef08a !important;
-        }
-
-        /* Floating DSH Assistant Button — 停在正文右侧预留槽内，不盖字 */
-        #dsh-floating-btn {
-            position: fixed;
-            bottom: 24px;
-            right: 16px;
-            z-index: 1200;
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-            color: #ffffff;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 9999px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 8px 25px rgba(30, 58, 138, 0.4);
-            transition: all 0.25s ease;
-        }
-        #dsh-floating-btn:hover {
-            transform: translateY(-3px) scale(1.03);
-            box-shadow: 0 12px 30px rgba(59, 130, 246, 0.5);
-        }
-
-        /* In-Page Embedded DSH Assistant Chat UI */
-        #dsh-chat-drawer {
-            position: fixed;
-            top: 0;
-            right: -480px;
-            width: 460px;
-            height: 100vh;
-            background: var(--bg-card);
-            border-left: 1px solid var(--border-dark);
-            z-index: 1300;
-            box-shadow: -10px 0 35px rgba(0,0,0,0.3);
-            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            padding: 0;
-        }
-        #dsh-chat-drawer.open {
-            right: 0;
-        }
-
-        /* Docked Split-Screen Mode (Fixed Live AI Workspace) */
-        body.assistant-docked #dsh-chat-drawer {
-            right: 0 !important;
-            width: 460px !important;
-            box-shadow: none !important;
-            border-left: 2px solid var(--border-dark) !important;
-        }
-
-        body.assistant-docked #dsh-floating-btn {
-            display: none !important;
-        }
-
-        body.assistant-docked #main-content {
-            margin-right: 470px !important;
-            width: calc(100% - 320px - 470px) !important;
-            padding-right: 56px !important;
-        }
-
-        body.sidebar-collapsed.assistant-docked #main-content {
-            margin-left: 40px !important;
-            margin-right: 480px !important;
-            max-width: 1000px !important;
-            width: calc(100% - 520px) !important;
-            padding-right: 32px !important;
-        }
-
-        /* 桌面：助手打开时讲义让出右侧，避免抽屉盖住正文 */
-        @media (min-width: 901px) {
-            body:has(#dsh-chat-drawer.open) #main-content {
-                margin-right: 480px !important;
-                width: calc(100% - 320px - 480px) !important;
-                max-width: min(1120px, calc(100% - 320px - 480px)) !important;
-            }
-            body.sidebar-collapsed:has(#dsh-chat-drawer.open) #main-content {
-                margin-left: 24px !important;
-                margin-right: 480px !important;
-                width: calc(100% - 504px) !important;
-                max-width: none !important;
-            }
-        }
-
-        .chat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            background: var(--bg-page);
-        }
-        .chat-header h3 {
-            font-size: 1.05rem;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 0;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 18px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            background: var(--bg-card);
-        }
-
-        .chat-msg {
-            display: flex;
-            flex-direction: column;
-            max-width: 92%;
-            animation: fadeIn 0.2s ease-out;
-        }
-        .chat-msg.user {
-            align-self: flex-end;
-        }
-        .chat-msg.assistant {
-            align-self: flex-start;
-            max-width: 100%;
-        }
-
-        .msg-bubble {
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-        .chat-msg.user .msg-bubble {
-            background: var(--primary);
-            color: #ffffff;
-            border-bottom-right-radius: 2px;
-        }
-        .chat-msg.assistant .msg-bubble {
-            background: var(--bg-page);
-            color: var(--text-main);
-            border: 1px solid var(--border);
-            border-bottom-left-radius: 2px;
-        }
-
-        .msg-bubble h4 {
-            margin-top: 8px;
-            margin-bottom: 4px;
-            color: var(--primary);
-            font-size: 0.92rem;
-        }
-        .msg-bubble h4:first-child {
-            margin-top: 0;
-        }
-        .msg-bubble p {
-            margin: 0 0 8px;
-        }
-        .msg-bubble p:last-child {
-            margin-bottom: 0;
-        }
-        .msg-bubble ul, .msg-bubble ol {
-            margin: 6px 0 10px;
-            padding-left: 1.35em;
-        }
-        .msg-bubble li {
-            margin: 4px 0;
-        }
-        .chat-math {
-            font-style: italic;
-        }
-        .chat-math.display {
-            display: block;
-            text-align: center;
-            margin: 8px 0;
-        }
-        .msg-bubble sup, .msg-bubble sub {
-            font-size: 0.75em;
-            font-style: normal;
-        }
-
-        .chat-chips-area {
-            padding: 8px 16px;
-            background: var(--bg-page);
-            border-top: 1px solid var(--border);
-            display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            white-space: nowrap;
-        }
-        .chat-chip {
-            background: var(--bg-card);
-            border: 1px solid var(--border-dark);
-            color: var(--text-muted);
-            font-size: 0.76rem;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 9999px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
-        }
-        .chat-chip:hover {
-            border-color: var(--primary-light);
-            color: var(--primary);
-        }
-
-        .chat-input-area {
-            padding: 14px 16px;
-            border-top: 1px solid var(--border);
-            background: var(--bg-page);
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .chat-input {
-            flex: 1;
-            border: 1px solid var(--border-dark);
-            border-radius: 8px;
-            background: var(--bg-card);
-            color: var(--text-main);
-            padding: 9px 12px;
-            font-size: 0.88rem;
-            font-family: inherit;
-            outline: none;
-        }
-        .chat-input:focus {
-            border-color: var(--primary-light);
-        }
-
-        .chat-send-btn {
-            background: var(--primary);
-            color: #ffffff;
-            border: none;
-            width: 38px;
-            height: 38px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            transition: opacity 0.2s ease;
-        }
-        .chat-send-btn:hover {
-            opacity: 0.9;
-        }
-        .chat-send-btn.stop-btn {
-            background: var(--danger);
-            font-size: 0.9rem;
-        }
-        #assistant-status-bar {
-            padding: 8px 16px;
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            background: var(--bg-page);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-        }
-        #assistant-status-bar strong { color: var(--primary); }
-        .ask-figure-btn {
-            display: inline-flex;
-            margin-top: 8px;
-            background: var(--primary-bg);
-            color: var(--primary);
-            border: 1px solid var(--border-dark);
-            border-radius: 9999px;
-            font-size: 0.76rem;
-            font-weight: 600;
-            padding: 4px 10px;
-            cursor: pointer;
-        }
-        .msg-bubble.error {
-            border-color: var(--danger);
-            background: var(--danger-bg);
-            color: var(--danger);
-        }
-        .msg-offline-tag {
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-        }
-        .msg-meta {
-            margin-top: 6px;
-            font-size: 0.72rem;
-            color: var(--text-muted);
-        }
-        .msg-bubble pre, .msg-bubble code {
-            font-family: var(--font-mono);
-            font-size: 0.82em;
-            white-space: pre-wrap;
-        }
-        .msg-sources {
-            margin-top: 8px;
-            font-size: 0.76rem;
-        }
-        .msg-sources button {
-            margin-right: 6px;
-            margin-top: 4px;
         }
 
         /* Toast Notification */
@@ -1344,33 +1028,8 @@
                 margin-left: 0 !important;
                 padding: 68px 20px 20px 20px !important;
             }
-            /* 窄屏：助手入口进顶栏预留带（与目录药丸同一行右侧），不占正文、不加页底 padding */
-            #dsh-floating-btn {
-                top: 12px;
-                right: 12px;
-                bottom: auto;
-                padding: 7px 12px;
-                font-size: 0.82rem;
-            }
             .sb-display {
                 grid-template-columns: 1fr;
-            }
-            /* AI assistant becomes a bounded overlay drawer; docked split-screen is desktop-only */
-            #dsh-chat-drawer {
-                width: min(460px, 100vw);
-            }
-            body.assistant-docked #dsh-chat-drawer {
-                width: min(460px, 100vw) !important;
-            }
-            body.assistant-docked #main-content,
-            body.sidebar-collapsed.assistant-docked #main-content {
-                margin-left: 0 !important;
-                margin-right: 0 !important;
-                width: 100% !important;
-                max-width: 100% !important;
-            }
-            body.assistant-docked #dsh-floating-btn {
-                display: flex !important;
             }
         }
             /* ===== P0: Print Stylesheet (打印/PDF 输出) ===== */
@@ -1390,7 +1049,7 @@
             }
             body { background: #ffffff !important; font-size: 11pt; }
             /* 隐藏全部交互层 */
-            #sidebar, #sidebar-toggle-pill, #dsh-floating-btn, #dsh-chat-drawer, #lightbox-modal,
+            #sidebar, #sidebar-toggle-pill, #lightbox-modal,
             #term-card, #note-editor, #text-selection-toolbar, #progress-bar,
             .sidebar-footer, .flashcard-wrapper, .fc-btn, #mcq-app,
             .theme-btn, .quiz-toggle, #toast-msg {
@@ -1508,8 +1167,6 @@
         <button class="hl-action-btn" id="add-hl-btn" onclick="applyHighlight()" title="添加黄色荧光高亮">🖍️ 荧光高亮</button>
         <button class="hl-action-btn" id="add-note-btn" onclick="openNoteEditor()" title="为划选文本添加我的文字批注">📝 批注</button>
         <button class="hl-action-btn" id="remove-hl-btn" onclick="removeHighlightAtSelection()" style="display:none; color: #f87171;" title="清除高亮">🗑️ 清除高亮</button>
-        <div style="width: 1px; height: 16px; background: #334155; margin: 0 2px;"></div>
-        <button class="hl-action-btn" onclick="sendSelectionToInPageAI()" title="在窗口内向 DSH 助手追问该概念">🤖 解释此概念</button>
     </div>
 
     <!-- Note Editor Popover -->
@@ -1532,7 +1189,6 @@
         <div class="tc-row"><span class="tc-label">拼读</span><span id="tc-chunks"></span></div>
         <div class="tc-row"><span class="tc-label">词源</span><span id="tc-parts"></span></div>
         <div class="tc-hook" id="tc-hook"></div>
-        <button id="tc-ask">🤖 问 AI 这个概念 →</button>
     </div>
 
     <!-- Progress Bar -->
@@ -1573,7 +1229,7 @@
             <div class="sidebar-footer-title">💾 学习数据（批注 <span id="note-count">0</span> 条）</div>
             <button class="data-btn" onclick="exportStudyData()" title="将全部高亮与批注下载为 JSON 备份文件">📤 导出高亮 + 批注 (JSON)</button>
             <button class="data-btn" onclick="document.getElementById('import-file-input').click()" title="从 JSON 备份文件恢复高亮与批注">📥 导入数据备份</button>
-            <button class="data-btn" onclick="copyNotesAsMarkdown()" title="复制为 Markdown，可粘贴回流到 Week_XX.md 知识库">📋 复制批注为 Markdown</button>
+            <button class="data-btn" onclick="copyNotesAsMarkdown()" title="复制为 Markdown，可粘贴到你的笔记">📋 复制批注为 Markdown</button>
             <input type="file" id="import-file-input" accept=".json,application/json" style="display:none" onchange="importStudyData(this.files[0]); this.value='';">
         </div>
     </aside>
@@ -1583,70 +1239,6 @@
         
         <!-- Header Banner -->
         <!-- @@ZONE:HEADER@@ --><!-- @@ZONE:CONTENT@@ --></main>
-
-    <!-- Floating DSH Assistant Button -->
-    <button type="button" id="dsh-floating-btn" onclick="toggleDSHDrawer()" title="打开本机 Grok 学习助手" aria-label="打开本机 Grok 学习助手">
-        <span>🤖</span> <span>Grok 助手</span>
-    </button>
-
-    <!-- In-Page Embedded DSH Assistant Drawer -->
-    <div id="dsh-chat-drawer">
-        <div class="chat-header">
-            <h3><span>🤖</span> {{ASSISTANT_NAME}}</h3>
-            <div style="display: flex; gap: 5px; align-items: center;">
-                <button class="sidebar-collapse-btn" onclick="toggleDockAssistant()" id="btn-dock-assistant" title="固定分屏 / 浮动窗口切换 (让 AI 常驻右侧分屏)">📌 固定分屏</button>
-                <button class="sidebar-collapse-btn" onclick="toggleAPISettings()" id="btn-api-settings" title="查看 Grok 连接与讲次资料">⚙️ 状态</button>
-                <button class="sidebar-collapse-btn" onclick="clearChatHistory()" title="清空对话记录">🧹</button>
-                <button class="sidebar-collapse-btn" onclick="toggleDSHDrawer(false)" style="font-size: 1.1rem; padding: 2px 7px;" aria-label="关闭 AI 助手面板">&times;</button>
-            </div>
-        </div>
-
-        <div id="dsh-api-settings" style="display: none; background: var(--bg-page); border-bottom: 1px solid var(--border); padding: 14px 16px; font-size: 0.82rem;">
-            <div style="font-weight: 700; color: var(--primary); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
-                <span>本机 Grok 订阅助手</span>
-                <span id="api-status-badge" style="color: var(--text-muted); font-weight: normal;">检测中</span>
-            </div>
-            <p id="assistant-lecture-label" style="margin-bottom: 6px; color: var(--text-muted);"></p>
-            <p id="assistant-materials-label" style="margin-bottom: 8px; color: var(--text-muted);"></p>
-            <p style="margin-bottom: 8px; color: var(--text-muted);">
-                推理档位
-                <select id="grok-variant-select" class="chat-input" style="width: auto; display: inline-block; padding: 4px 8px; font-size: 0.78rem; margin-left: 6px;" onchange="setGrokVariant(this.value)">
-                    <option value="low">低（默认，边问边答）</option>
-                    <option value="medium">中（问图、检查理解）</option>
-                    <option value="high">高（更慢、更细）</option>
-                </select>
-            </p>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
-                <button class="chat-chip" onclick="refreshAssistantStatus()">刷新连接</button>
-                <button class="chat-chip" onclick="newGrokConversation()">新对话</button>
-                <button class="chat-chip" onclick="retryLastGrok()">重试</button>
-                <button class="chat-chip" onclick="checkMyUnderstanding()">检查我的理解</button>
-                <button class="chat-chip" onclick="openRegisteredSource('slides')">打开课件</button>
-                <button class="chat-chip" onclick="openRegisteredSource('reading')">打开阅读</button>
-            </div>
-            <p style="margin: 0; font-size: 0.76rem; color: var(--text-muted);">不需要填写 API Key。连不上时请双击「打开讲义」。失败不会改用其他付费渠道。</p>
-        </div>
-        <div id="assistant-status-bar">
-            <span id="assistant-status-text">请双击「打开讲义」以连接 Grok。</span>
-        </div>
-        
-        <!-- Chat Message Area -->
-        <div class="chat-messages" id="chatMessages">
-            <div class="chat-msg assistant">
-                <div class="msg-bubble">
-                    <p style="margin-bottom: 6px;">你好，我是 <strong>{{ASSISTANT_NAME}}</strong>。</p>
-                    <p style="margin-bottom: 0;">划选正文点「解释此概念」，或点图下的「问这张图」。回答依据本讲课件、指定阅读和当前章节。请用「打开讲义」进入本页。</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Question Chips -->
-        <div class="chat-chips-area">{{QUICK_CHIPS}}<div class="chat-input-area">
-            <input type="text" id="chatInput" class="chat-input" placeholder="输入你想探讨的概念或提问..." onkeydown="handleChatKeyDown(event)">
-            <button class="chat-send-btn stop-btn" id="btn-stop-grok" onclick="stopGeneration()" title="停止生成" style="display:none;">■</button>
-            <button class="chat-send-btn" id="btn-send-grok" onclick="sendUserMessage()" title="发送提问">➤</button>
-        </div>
-    </div>
 
     <!-- Toast Notification -->
     <div id="toast-msg"></div>
@@ -1662,39 +1254,15 @@
     <script>
         // ==========================================
         // DOCUMENT IDENTITY & STORAGE NAMESPACE
-        // 框架化：DOC_ID 派生全部 localStorage 键；本科目取 "psyc" 时与历史键名逐字节一致（零数据迁移）
+        // DOC_ID 派生全部 localStorage 键：同一 origin 下多份讲义互不覆盖
         // ==========================================
         const DOC_ID = "{{DOC_ID}}";
         const APP_ID = "{{APP_ID}}";
-        const GUIDE_FILE = "{{GUIDE_FILE}}";
-        const ASSISTANT_META = {{ASSISTANT_META_JSON}};
-        const AISTUDIO_PROMPT = {{AISTUDIO_PROMPT_JSON}};
-        const COURSE_SYSTEM_PROMPT = "{{SYSTEM_PROMPT}}";
-        const ASSISTANT_ORIGIN = (location.protocol === "http:" && location.hostname === "127.0.0.1")
-            ? location.origin
-            : "http://127.0.0.1:8787";
-        function localGuideUrl() {
-            return "http://127.0.0.1:8787/guides/" + encodeURIComponent(DOC_ID) + "/" + encodeURIComponent(GUIDE_FILE);
-        }
-        function maybeRedirectToLocalAssistant() {
-            if (location.protocol !== "file:") return false;
-            location.replace(localGuideUrl());
-            return true;
-        }
         const LS = {
             theme: DOC_ID + "_theme",
             sidebar: DOC_ID + "_sidebar_collapsed",
-            docked: DOC_ID + "_assistant_docked",
             highlights: DOC_ID + "_study_highlights_v4",
-            notes: DOC_ID + "_study_notes_v1",
-            chatHistory: DOC_ID + "_ai_chat_history",
-            grokChat: DOC_ID + "_grok_chat_v1",
-            grokConversation: DOC_ID + "_grok_conversation_v1",
-            grokLecture: DOC_ID + "_grok_lecture_v1",
-            grokVariant: DOC_ID + "_grok_variant_v1",
-            aiEndpoint: DOC_ID + "_ai_endpoint",
-            aiKey: DOC_ID + "_ai_key",
-            aiModel: DOC_ID + "_ai_model"
+            notes: DOC_ID + "_study_notes_v1"
         };
 
         // Progress Bar
@@ -2023,7 +1591,7 @@
                 document.getElementById("add-hl-btn").style.display = "none";
                 document.getElementById("remove-hl-btn").style.display = "inline-flex";
                 positionToolbar(toolbar, rect);
-            } else if (!e.target.closest("#text-selection-toolbar") && !e.target.closest("#dsh-chat-drawer") && !e.target.closest("#dsh-floating-btn")) {
+            } else if (!e.target.closest("#text-selection-toolbar")) {
                 if (!window.getSelection() || window.getSelection().isCollapsed) {
                     toolbar.style.display = "none";
                     activeHighlightEl = null;
@@ -2390,7 +1958,7 @@
             if (!notes.length && !hls.length) { showToast("⚠️ 还没有任何批注或高亮。"); return; }
 
             let md = "# {{SIDEBAR_TITLE}} · 我的批注与高亮\n\n";
-            md += "> 导出于 " + new Date().toLocaleString() + "，可粘贴回流到 Week_XX.md / Topic Review 笔记\n\n";
+            md += "> 导出于 " + new Date().toLocaleString() + "\n\n";
 
             if (notes.length) {
                 md += "## 📝 我的批注（" + notes.length + " 条）\n\n";
@@ -2405,7 +1973,7 @@
                 md += "## 🖍️ 高亮摘记（" + hls.length + " 条）\n\n";
                 hls.forEach(h => { md += "- " + h.text + "\n"; });
             }
-            copyText(md, "📋 已复制 Markdown！可粘贴到 Week_XX.md 知识库。");
+            copyText(md, "📋 已复制 Markdown！");
         }
 
         function copyText(text, okMsg) {
@@ -2548,14 +2116,6 @@
                 e.stopPropagation();
                 speakCurrentTerm();
             });
-            document.getElementById("tc-ask").addEventListener("click", (e) => {
-                e.stopPropagation();
-                if (currentTermEntry) {
-                    const t = currentTermEntry.term;
-                    hideTermCard();
-                    quickAsk("请帮我深度解析概念：【" + t + "】");
-                }
-            });
         }
 
         // ==========================================
@@ -2611,724 +2171,6 @@
             if (el) el.remove();
         });
 
-        // ==========================================
-        // IN-PAGE GROK STUDY ASSISTANT
-        // ==========================================
-        let chatHistory = [];
-        let lastDiscussedTopic = null;
-        let grokMessages = [];
-        let grokConversationId = localStorage.getItem(LS.grokConversation) || "";
-        let grokLectureId = localStorage.getItem(LS.grokLecture) || ((ASSISTANT_META && ASSISTANT_META.default_lecture) || "");
-        let grokGenerating = false;
-        let grokAbort = null;
-        let grokLastPayload = null;
-        let grokVariant = "low";
-        let grokStatus = { auth: "unknown" };
-
-        function defaultLectureId() {
-            if (grokLectureId) return grokLectureId;
-            const lectures = (ASSISTANT_META && ASSISTANT_META.lectures) || [];
-            return (lectures[0] && lectures[0].id) || "";
-        }
-
-        function setGrokVariant(v) {
-            const allowed = { low: 1, medium: 1, high: 1 };
-            grokVariant = allowed[v] ? v : "low";
-            localStorage.setItem(LS.grokVariant, grokVariant);
-            const sel = document.getElementById("grok-variant-select");
-            if (sel && sel.value !== grokVariant) sel.value = grokVariant;
-            paintStatus();
-        }
-
-        function currentSectionId() {
-            const sel = window.getSelection();
-            if (sel && !sel.isCollapsed && sel.anchorNode) {
-                const el = sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement;
-                const sec = el && el.closest && el.closest("#main-content section[id]");
-                if (sec) return sec.id;
-            }
-            const sections = document.querySelectorAll("#main-content section[id]");
-            for (const s of sections) {
-                const r = s.getBoundingClientRect();
-                if (r.top < 200 && r.bottom > 80) return s.id;
-            }
-            return sections[0] ? sections[0].id : "";
-        }
-
-        function setGenerating(on) {
-            grokGenerating = on;
-            const stopBtn = document.getElementById("btn-stop-grok");
-            const sendBtn = document.getElementById("btn-send-grok");
-            if (stopBtn) stopBtn.style.display = on ? "flex" : "none";
-            if (sendBtn) sendBtn.style.display = on ? "none" : "flex";
-        }
-
-        function paintStatus() {
-            const badge = document.getElementById("api-status-badge");
-            const bar = document.getElementById("assistant-status-text");
-            const lec = document.getElementById("assistant-lecture-label");
-            const mat = document.getElementById("assistant-materials-label");
-            const st = grokStatus || {};
-            let label = "未连接";
-            let color = "var(--text-muted)";
-            if (location.protocol === "file:") {
-                label = "请双击「打开讲义」";
-            } else if (st.auth === "ok") {
-                label = "已连接 " + (st.model || "Grok");
-                color = "var(--success)";
-            } else if (st.auth === "missing") {
-                label = "未登录或已过期";
-                color = "var(--danger)";
-            } else if (st.opencode && st.opencode.healthy === false) {
-                label = "OpenCode 未启动";
-                color = "var(--danger)";
-            } else if (st.error) {
-                label = "连接失败";
-                color = "var(--danger)";
-            }
-            if (grokGenerating) {
-                label = "正在生成";
-                color = "var(--primary)";
-            }
-            if (badge) {
-                badge.textContent = label;
-                badge.style.color = color;
-            }
-            if (bar) {
-                const vLabel = grokVariant === "high" ? "高" : (grokVariant === "medium" ? "中" : "低");
-                bar.innerHTML = "<strong>" + escapeHtml(label) + "</strong> · 本讲 " + escapeHtml(defaultLectureId() || "未指定") + " · 推理" + vLabel;
-            }
-            if (lec) {
-                const lectures = (ASSISTANT_META && ASSISTANT_META.lectures) || [];
-                const cur = lectures.find(l => l.id === defaultLectureId()) || lectures[0];
-                lec.textContent = cur ? ("讲次：" + cur.id + " " + (cur.name || "")) : "本科目尚未注册讲次资料；仍可发送当前章节。";
-            }
-            if (mat) {
-                const m = st.materials;
-                if (!m) {
-                    mat.textContent = "资料状态：用「打开讲义」进入后显示课件与阅读是否已加载。";
-                } else {
-                    const slides = m.slides ? (m.slides.pages + " 页课件 / 文字 " + m.slides.text_status + " / 图 " + m.slides.images_status) : "无课件";
-                    const readings = (m.readings || []).map(r => (r.label || "阅读") + " " + r.pages + " 页").join("；") || "无指定阅读";
-                    const err = (m.errors || []).join("；");
-                    mat.textContent = "资料：" + slides + " · " + readings + (err ? " · " + err : "");
-                }
-            }
-        }
-
-        async function refreshAssistantStatus() {
-            if (location.protocol === "file:") {
-                grokStatus = { auth: "file", error: "file" };
-                paintStatus();
-                showToast("请双击「打开讲义」。");
-                return;
-            }
-            try {
-                const url = ASSISTANT_ORIGIN + "/api/status?doc_id=" + encodeURIComponent(DOC_ID) + "&lecture_id=" + encodeURIComponent(defaultLectureId());
-                const res = await fetch(url, { headers: { "Accept": "application/json" } });
-                grokStatus = await res.json();
-            } catch (e) {
-                grokStatus = { auth: "offline", error: "offline" };
-            }
-            paintStatus();
-        }
-
-        function toggleDSHDrawer(forceState) {
-            const drawer = document.getElementById("dsh-chat-drawer");
-            const wasOpen = drawer.classList.contains("open");
-            if (typeof forceState === "boolean") {
-                if (forceState) drawer.classList.add("open");
-                else drawer.classList.remove("open");
-            } else {
-                drawer.classList.toggle("open");
-            }
-            if (!drawer.classList.contains("open")) {
-                // Docked CSS must not keep a deliberately closed panel visible.
-                document.body.classList.remove("assistant-docked");
-            } else {
-                if (window.innerWidth > 900) {
-                    document.body.classList.add("assistant-docked");
-                    const btn = document.getElementById("btn-dock-assistant");
-                    if (btn) {
-                        btn.textContent = "🔓 浮动";
-                        btn.style.color = "var(--primary-light)";
-                    }
-                }
-                document.getElementById("chatInput").focus();
-                if (!wasOpen) refreshAssistantStatus();
-            }
-        }
-
-        function toggleDockAssistant() {
-            const body = document.body;
-            const isDocked = body.classList.toggle("assistant-docked");
-            const btn = document.getElementById("btn-dock-assistant");
-            if (isDocked) {
-                btn.textContent = "🔓 浮动";
-                btn.style.color = "var(--primary-light)";
-                toggleDSHDrawer(true);
-                localStorage.setItem(LS.docked, "true");
-                showToast("已开启固定分屏（左侧讲义 + 右侧助手）。");
-            } else {
-                btn.textContent = "📌 固定分屏";
-                btn.style.color = "";
-                localStorage.setItem(LS.docked, "false");
-                showToast("已切换为浮动抽屉。");
-            }
-        }
-
-        function savePersistentChat() {
-            localStorage.setItem(LS.grokChat, JSON.stringify(grokMessages));
-            if (grokConversationId) localStorage.setItem(LS.grokConversation, grokConversationId);
-            if (grokLectureId) localStorage.setItem(LS.grokLecture, grokLectureId);
-        }
-
-        function loadPersistentChat() {
-            grokLectureId = localStorage.getItem(LS.grokLecture) || defaultLectureId();
-            grokConversationId = localStorage.getItem(LS.grokConversation) || "";
-            setGrokVariant(localStorage.getItem(LS.grokVariant) || "low");
-            const saved = localStorage.getItem(LS.grokChat);
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        grokMessages = parsed;
-                        const container = document.getElementById("chatMessages");
-                        container.innerHTML = "";
-                        grokMessages.forEach(msg => {
-                            appendChatMessage(msg.role, msg.content, {
-                                offline: !!msg.offline,
-                                error: !!msg.error,
-                                restore: true,
-                                elapsedMs: msg.elapsedMs,
-                                firstMs: msg.firstMs,
-                                variant: msg.variant,
-                                hadImage: msg.hadImage
-                            });
-                        });
-                    }
-                } catch (e) {}
-            }
-            if (localStorage.getItem(LS.docked) === "true" && window.innerWidth > 1024) {
-                document.body.classList.add("assistant-docked");
-                document.getElementById("dsh-chat-drawer").classList.add("open");
-                const btn = document.getElementById("btn-dock-assistant");
-                if (btn) {
-                    btn.textContent = "🔓 浮动";
-                    btn.style.color = "var(--primary-light)";
-                }
-            }
-        }
-
-        function toggleAPISettings() {
-            const box = document.getElementById("dsh-api-settings");
-            box.style.display = box.style.display === "none" ? "block" : "none";
-            if (box.style.display === "block") refreshAssistantStatus();
-        }
-
-        function handleChatKeyDown(e) {
-            if (e.isComposing || e.keyCode === 229) return;
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendUserMessage();
-            }
-        }
-
-        function sendSelectionToInPageAI() {
-            const selection = window.getSelection();
-            const text = (selection && !selection.isCollapsed) ? selection.toString().trim() : (activeHighlightEl ? activeHighlightEl.textContent : "");
-            if (!text) return;
-            document.getElementById("text-selection-toolbar").style.display = "none";
-            const selectedSection = activeHighlightEl && activeHighlightEl.closest("#main-content section[id]");
-            askQuestionDirectly("请解释选中的内容：\n" + text, {
-                selected: text,
-                section_id: (selection && !selection.isCollapsed) ? currentSectionId() : (selectedSection ? selectedSection.id : currentSectionId())
-            });
-        }
-
-        function quickAsk(qText) {
-            askQuestionDirectly(qText);
-        }
-
-        function sendUserMessage() {
-            const input = document.getElementById("chatInput");
-            const query = input.value.trim();
-            if (!query) return;
-            if (grokGenerating) {
-                showToast("正在生成，请先停止或等它结束。");
-                return;
-            }
-            input.value = "";
-            askQuestionDirectly(query);
-        }
-
-        function checkMyUnderstanding() {
-            const selection = window.getSelection();
-            const selected = (selection && !selection.isCollapsed) ? selection.toString().trim() : "";
-            const typed = document.getElementById("chatInput").value.trim();
-            const text = selected || typed;
-            if (!text) {
-                showToast("先划选或输入你的理解，再点检查。");
-                return;
-            }
-            if (grokGenerating) {
-                showToast("正在生成，请先停止或等它结束。");
-                return;
-            }
-            document.getElementById("chatInput").value = "";
-            askQuestionDirectly("请检查我的理解，指出具体遗漏与混淆：\n" + text, { selected: selected });
-        }
-
-        function askAboutFigure(fig, index) {
-            const img = fig.querySelector("img");
-            if (!img) return;
-            const src = img.getAttribute("src") || "";
-            const cap = ((fig.querySelector("figcaption") || {}).textContent || img.alt || "").replace(/\s+/g, " ").trim();
-            let image;
-            if (src.indexOf("data:image/") === 0) {
-                image = { kind: "data", data_url: src };
-            } else if (src.indexOf("assets/") === 0) {
-                image = { kind: "figure", id: "fig-" + String(index + 1).padStart(2, "0"), file: src };
-            } else {
-                showToast("无法发送这张图。");
-                return;
-            }
-            const section = fig.closest("#main-content section[id]");
-            askQuestionDirectly("请根据实际图片解释： " + cap, {
-                image: image,
-                section_id: section ? section.id : currentSectionId()
-            });
-        }
-
-        function initFigureAskButtons() {
-            document.querySelectorAll("#main-content figure").forEach((fig, i) => {
-                if (fig.querySelector(".ask-figure-btn")) return;
-                const btn = document.createElement("button");
-                btn.type = "button";
-                btn.className = "ask-figure-btn";
-                btn.textContent = "问这张图";
-                btn.addEventListener("click", function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    askAboutFigure(fig, i);
-                });
-                fig.appendChild(btn);
-            });
-        }
-
-        async function openRegisteredSource(kind) {
-            if (location.protocol === "file:") {
-                showToast("请双击「打开讲义」后再打开课件或阅读。");
-                return;
-            }
-            try {
-                const res = await fetch(ASSISTANT_ORIGIN + "/api/open-source", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ doc_id: DOC_ID, lecture_id: defaultLectureId(), kind: kind, reading_index: 0 })
-                });
-                const data = await res.json();
-                if (!res.ok) showToast(data.error || "无法打开资料");
-            } catch (e) {
-                showToast("无法打开资料：先启动学习助手。");
-            }
-        }
-
-        function newGrokConversation() {
-            grokConversationId = "";
-            grokMessages = [];
-            lastDiscussedTopic = null;
-            localStorage.removeItem(LS.grokConversation);
-            localStorage.removeItem(LS.grokChat);
-            const container = document.getElementById("chatMessages");
-            container.innerHTML = '<div class="chat-msg assistant"><div class="msg-bubble"><p>新对话已开始。高亮和批注没有改动。</p></div></div>';
-            showToast("已新建对话。");
-        }
-
-        function retryLastGrok() {
-            if (!grokLastPayload) {
-                showToast("没有可重试的问题。");
-                return;
-            }
-            askQuestionDirectly(grokLastPayload.text, { retry: true, image: grokLastPayload.image, selected: grokLastPayload.selected_text });
-        }
-
-        async function stopGeneration() {
-            if (grokAbort) grokAbort.abort();
-            if (location.protocol !== "file:" && grokConversationId) {
-                try {
-                    await fetch(ASSISTANT_ORIGIN + "/api/chat/stop", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            doc_id: DOC_ID,
-                            lecture_id: defaultLectureId(),
-                            conversation_id: grokConversationId
-                        })
-                    });
-                } catch (e) {}
-            }
-            setGenerating(false);
-            paintStatus();
-        }
-
-        async function readSSE(response, onEvent) {
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder("utf-8");
-            let buf = "";
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                buf += decoder.decode(value, { stream: true });
-                const blocks = buf.split("\n\n");
-                buf = blocks.pop();
-                for (const block of blocks) {
-                    let event = "message";
-                    let data = "";
-                    block.split("\n").forEach(function (line) {
-                        if (line.indexOf("event: ") === 0) event = line.slice(7).trim();
-                        if (line.indexOf("data: ") === 0) data += line.slice(6);
-                    });
-                    if (!data) continue;
-                    try { onEvent(event, JSON.parse(data)); } catch (e) {}
-                }
-            }
-        }
-
-        async function askQuestionDirectly(query, extra) {
-            extra = extra || {};
-            // Capture the originating section before drawer reflow changes the viewport.
-            const originSectionId = extra.section_id || currentSectionId();
-            if (grokGenerating) {
-                showToast("正在生成，请先停止或等它结束。");
-                return;
-            }
-            setGenerating(true);
-            toggleDSHDrawer(true);
-            if (!extra.retry) {
-                appendChatMessage("user", query);
-                grokMessages.push({ role: "user", content: query });
-                savePersistentChat();
-            }
-            const payload = {
-                doc_id: DOC_ID,
-                lecture_id: defaultLectureId(),
-                conversation_id: grokConversationId || "",
-                section_id: originSectionId,
-                selected_text: extra.selected || "",
-                text: query,
-                image: extra.image || null,
-                variant: grokVariant
-            };
-            grokLastPayload = payload;
-            const waitText = extra.image
-                ? "正在读图并根据本讲资料回答（推理" + (grokVariant === "high" ? "高" : (grokVariant === "medium" ? "中" : "低")) + "档，可能要等半分钟）…"
-                : "正在根据本讲资料回答（推理" + (grokVariant === "high" ? "高" : (grokVariant === "medium" ? "中" : "低")) + "档）…";
-            const typingMsg = appendChatMessage("assistant", waitText, { typing: true });
-            const bubble = typingMsg.querySelector(".msg-bubble");
-            if (location.protocol === "file:") {
-                bubble.classList.add("error");
-                bubble.textContent = "请双击「打开讲义」。不要把这次失败当成课程答案。";
-                grokMessages.push({ role: "assistant", content: bubble.textContent, error: true });
-                savePersistentChat();
-                setGenerating(false);
-                return;
-            }
-            paintStatus();
-            grokAbort = new AbortController();
-            let fullText = "";
-            let hadError = false;
-            const t0 = Date.now();
-            let firstMs = null;
-            try {
-                const response = await fetch(ASSISTANT_ORIGIN + "/api/chat", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                    signal: grokAbort.signal
-                });
-                if (!response.ok) {
-                    let msg = "HTTP " + response.status;
-                    try {
-                        const err = await response.json();
-                        msg = err.error || msg;
-                    } catch (e) {}
-                    throw new Error(msg);
-                }
-                await readSSE(response, function (event, data) {
-                    if (event === "status") {
-                        if (data.conversation_id) {
-                            grokConversationId = data.conversation_id;
-                            localStorage.setItem(LS.grokConversation, grokConversationId);
-                        }
-                        if (data.materials) grokStatus.materials = data.materials;
-                        if (data.truncated) {
-                            bubble.textContent = "材料较多，已按本讲缩小范围。正在生成…";
-                        }
-                    } else if (event === "delta") {
-                        if (firstMs == null) firstMs = Date.now() - t0;
-                        fullText += (data.text || "");
-                        bubble.classList.remove("error");
-                        bubble.style.fontStyle = "";
-                        bubble.innerHTML = renderGrokMarkdown(fullText);
-                        scrollChatToBottom();
-                    } else if (event === "error") {
-                        hadError = true;
-                        bubble.classList.add("error");
-                        bubble.textContent = data.message || "Grok 请求失败。";
-                    } else if (event === "done") {
-                        if (data.conversation_id) grokConversationId = data.conversation_id;
-                    }
-                });
-            } catch (err) {
-                if (err && err.name === "AbortError") {
-                    if (!fullText) {
-                        bubble.classList.add("error");
-                        bubble.textContent = "已停止生成。";
-                    }
-                } else {
-                    hadError = true;
-                    bubble.classList.add("error");
-                    bubble.textContent = (err && err.message) ? err.message : "无法连接本机助手。请双击「打开讲义」。";
-                }
-            } finally {
-                setGenerating(false);
-                paintStatus();
-                grokAbort = null;
-            }
-            const content = fullText || bubble.textContent || "";
-            const elapsedMs = Date.now() - t0;
-            grokMessages.push({
-                role: "assistant",
-                content: content,
-                error: hadError,
-                elapsedMs: elapsedMs,
-                firstMs: firstMs,
-                variant: grokVariant,
-                hadImage: !!(extra && extra.image)
-            });
-            attachReplyTiming(typingMsg, {
-                elapsedMs: elapsedMs,
-                firstMs: firstMs,
-                variant: grokVariant,
-                hadImage: !!(extra && extra.image)
-            });
-            savePersistentChat();
-            scrollChatToBottom();
-        }
-
-        function escapeHtml(str) {
-            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-        }
-
-        function tidyChatMath(inner) {
-            const cmds = {
-                times: "×", cdot: "·", equiv: "≡", neq: "≠", ne: "≠",
-                leq: "≤", le: "≤", geq: "≥", ge: "≥",
-                Delta: "Δ", alpha: "α", beta: "β", gamma: "γ",
-                theta: "θ", lambda: "λ", mu: "μ", pi: "π",
-                sigma: "σ", omega: "ω", Omega: "Ω", infty: "∞",
-                pm: "±", to: "→", approx: "≈", sum: "∑", prod: "∏",
-                int: "∫", partial: "∂", ldots: "…", cdots: "⋯",
-                left: "", right: "", mathrm: "", text: "",
-                bar: "", hat: "", overline: "", quad: " ", qquad: " "
-            };
-            cmds["right" + "arrow"] = "→";
-            cmds["Right" + "arrow"] = "⇒";
-            cmds["left" + "arrow"] = "←";
-            let t = String(inner || "");
-            const fracName = "frac";
-            t = t.replace(new RegExp("\\\\" + fracName + "\\{([^{}]+)\\}\\{([^{}]+)\\}", "g"), "($1)/($2)");
-            t = t.replace(/\\([A-Za-z]+)/g, function (_, name) {
-                return Object.prototype.hasOwnProperty.call(cmds, name) ? cmds[name] : name;
-            });
-            t = t.replace(/([A-Za-z0-9)])\^\{([^{}]+)\}/g, "$1<sup>$2</sup>");
-            t = t.replace(/([A-Za-z0-9)])\^([A-Za-z0-9*])/g, "$1<sup>$2</sup>");
-            t = t.replace(/([A-Za-z0-9)])_\{([^{}]+)\}/g, "$1<sub>$2</sub>");
-            t = t.replace(/([A-Za-z0-9)])_([A-Za-z0-9])/g, "$1<sub>$2</sub>");
-            t = t.replace(/[{}]/g, "");
-            t = t.replace(/\\/g, "");
-            return t;
-        }
-
-        function convertChatMath(s) {
-            function wrap(inner, display) {
-                return '<span class="chat-math' + (display ? " display" : "") + '">' + tidyChatMath(inner) + "</span>";
-            }
-            const D = String.fromCharCode(36);
-            const fracName = "frac";
-            s = s.replace(/\\\[([\s\S]+?)\\\]/g, function (_, m) { return wrap(m, true); });
-            s = s.replace(new RegExp(D + D + "([\\s\\S]+?)" + D + D, "g"), function (_, m) { return wrap(m, true); });
-            s = s.replace(/\\\(([\s\S]+?)\\\)/g, function (_, m) { return wrap(m, false); });
-            s = s.replace(new RegExp(D + "([^" + D + "\\n]+)" + D, "g"), function (_, m) { return wrap(m, false); });
-            s = s.replace(new RegExp("\\\\" + fracName + "\\{([^{}]+)\\}\\{([^{}]+)\\}", "g"), function (_, a, b) {
-                return wrap("(" + a + ")/(" + b + ")", false);
-            });
-            return s;
-        }
-
-        function renderGrokBlocks(s) {
-            const lines = String(s || "").split("\n");
-            const out = [];
-            let i = 0;
-            while (i < lines.length) {
-                const line = lines[i];
-                const heading = /^(#{1,3}) +(.+)$/.exec(line);
-                if (heading) {
-                    out.push("<h4>" + heading[2] + "</h4>");
-                    i++;
-                    continue;
-                }
-                const ulItem = /^[-*•] +(.+)$/.exec(line);
-                const olItem = /^(\d+)\. +(.+)$/.exec(line);
-                if (ulItem || olItem) {
-                    const ordered = !!olItem;
-                    const items = [];
-                    while (i < lines.length) {
-                        const L = lines[i];
-                        if (L === "") break;
-                        const nextUl = /^[-*•] +(.+)$/.exec(L);
-                        const nextOl = /^(\d+)\. +(.+)$/.exec(L);
-                        if (!ordered && nextUl) {
-                            items.push(nextUl[1]);
-                            i++;
-                            continue;
-                        }
-                        if (ordered && nextOl) {
-                            items.push(nextOl[2]);
-                            i++;
-                            continue;
-                        }
-                        if ((!ordered && nextOl) || (ordered && nextUl)) break;
-                        if (items.length && !/^(#{1,3}) /.test(L)) {
-                            items[items.length - 1] += "<br>" + L;
-                            i++;
-                            continue;
-                        }
-                        break;
-                    }
-                    const tag = ordered ? "ol" : "ul";
-                    out.push("<" + tag + ">" + items.map(function (it) { return "<li>" + it + "</li>"; }).join("") + "</" + tag + ">");
-                    continue;
-                }
-                if (line === "") {
-                    i++;
-                    continue;
-                }
-                const buf = [line];
-                i++;
-                while (i < lines.length) {
-                    const L = lines[i];
-                    if (L === "") {
-                        i++;
-                        break;
-                    }
-                    if (/^(#{1,3}) /.test(L) || /^[-*•] /.test(L) || /^\d+\. /.test(L)) break;
-                    buf.push(L);
-                    i++;
-                }
-                out.push("<p>" + buf.join("<br>") + "</p>");
-            }
-            return out.join("");
-        }
-
-        function renderGrokMarkdown(text) {
-            if (!text) return "";
-            const fences = [];
-            let s = escapeHtml(text);
-            s = s.replace(/```([\s\S]*?)```/g, function (_, code) {
-                fences.push("<pre><code>" + code + "</code></pre>");
-                return "\u0000F" + (fences.length - 1) + "\u0000";
-            });
-            s = convertChatMath(s);
-            s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
-            s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-            s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-            s = renderGrokBlocks(s);
-            s = s.replace(/\u0000F(\d+)\u0000/g, function (_, idx) { return fences[Number(idx)] || ""; });
-            return s;
-        }
-
-        function formatMarkdown(text) {
-            return renderGrokMarkdown(text);
-        }
-
-        function appendChatMessage(role, content, opts) {
-            opts = opts || {};
-            const container = document.getElementById("chatMessages");
-            const msgDiv = document.createElement("div");
-            msgDiv.className = "chat-msg " + role;
-            const bubble = document.createElement("div");
-            bubble.className = "msg-bubble";
-            if (opts.typing) {
-                bubble.style.fontStyle = "italic";
-                bubble.style.color = "var(--text-muted)";
-                bubble.textContent = content || "正在根据本讲资料回答…";
-            } else if (role === "user") {
-                bubble.textContent = content;
-            } else if (opts.offline) {
-                const tag = document.createElement("div");
-                tag.className = "msg-offline-tag";
-                tag.textContent = "离线词典（不是 Grok）";
-                bubble.appendChild(tag);
-                const body = document.createElement("div");
-                body.innerHTML = content;
-                bubble.appendChild(body);
-            } else if (opts.error) {
-                bubble.classList.add("error");
-                bubble.textContent = content;
-            } else {
-                bubble.innerHTML = renderGrokMarkdown(content);
-            }
-            msgDiv.appendChild(bubble);
-            if (opts.elapsedMs && role === "assistant" && !opts.typing) {
-                attachReplyTiming(msgDiv, opts);
-            }
-            container.appendChild(msgDiv);
-            scrollChatToBottom();
-            return msgDiv;
-        }
-
-        function formatReplySeconds(ms) {
-            if (!ms || ms < 0) return "";
-            return (ms / 1000).toFixed(1).replace(/\.0$/, "") + " 秒";
-        }
-
-        function attachReplyTiming(msgDiv, info) {
-            if (!msgDiv || !info || !info.elapsedMs) return;
-            let meta = msgDiv.querySelector(".msg-meta");
-            if (!meta) {
-                meta = document.createElement("div");
-                meta.className = "msg-meta";
-                msgDiv.appendChild(meta);
-            }
-            const v = info.variant === "high" ? "高" : (info.variant === "medium" ? "中" : "低");
-            let line = "用时 " + formatReplySeconds(info.elapsedMs) + " · 推理" + v + "档";
-            if (info.firstMs) line += " · 出字 " + formatReplySeconds(info.firstMs);
-            if (info.hadImage) line += " · 含图";
-            meta.textContent = line;
-        }
-
-        function scrollChatToBottom() {
-            const container = document.getElementById("chatMessages");
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function clearChatHistory() {
-            newGrokConversation();
-        }
-
-        // ==========================================
-        // OFFLINE EXPERT DICTIONARY (Fallback Knowledge Base)
-        // keys: lowercase trigger words; matched against the user's concept
-        // ==========================================
-        // @@ZONE:DATA:psycDict@@
-
-        // ==========================================
-        // MASTER COMPREHENSIVE LOCAL REASONING ENGINE
-        // ==========================================
-        // @@ZONE:AI_ENGINE@@
-
         let toastTimer = null;
         function showToast(msg) {
             const toast = document.getElementById("toast-msg");
@@ -3344,7 +2186,6 @@
         // Initialize immediately — this <script> is at the end of <body>, so the DOM is already parsed.
         // (window.onload would needlessly wait for all lazy-loaded slide images before restoring highlights.)
         (function initApp() {
-            if (maybeRedirectToLocalAssistant()) return;
             updateFC();
             initMCQ();
             restoreHighlights();
@@ -3353,11 +2194,6 @@
             updateNoteCount();
             initTermCards();
             initA11y();
-            loadPersistentChat();
-            setGrokVariant(localStorage.getItem(LS.grokVariant) || "low");
-            initFigureAskButtons();
-            paintStatus();
-            refreshAssistantStatus();
             // On narrow screens the sidebar starts hidden — the pill should read "open", not "collapse"
             if (window.innerWidth <= 900) {
                 const pillIcon = document.getElementById("sidebar-pill-icon");
