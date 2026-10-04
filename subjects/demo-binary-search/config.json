@@ -1,0 +1,11 @@
+{
+  "doc_id": "demo_binary_search",
+  "app_id": "lecture-workbench-demo-binary-search",
+  "title": "示例 · 二分查找 Binary Search",
+  "sidebar_title": "示例：二分查找",
+  "sidebar_meta": "lecture-workbench demo",
+  "search_placeholder": "🔍 搜索目录…",
+  "output": "Binary_Search_Demo.html",
+  "header_html": "<header class=\"doc-header\"><h1>Binary Search<br>二分查找</h1><p>lecture-workbench 示例科目 · 演示正文结构、术语卡、抽认卡与选择题</p><div class=\"badge-group\"><span class=\"badge\">原创示例内容</span><span class=\"badge\">离线可用</span></div></header>",
+  "nav_html": "<li><a href=\"#bs-overview\">1.0 本讲主线</a></li>\n<li><a href=\"#bs-mechanism\">1.1 每次比较排除一半</a></li>\n<li><a href=\"#bs-cost\">1.2 步数为什么是 log₂ n</a></li>\n<li><a href=\"#bs-pitfalls\">1.3 前提与边界</a></li>\n<li><a href=\"#bs-transfer\">1.4 迁移：同一个机制换场景</a></li>\n<li><a href=\"#bs-flashcards\">1.5 抽认卡</a></li>\n<li><a href=\"#bs-practice\">1.6 选择题</a></li>\n"
+}

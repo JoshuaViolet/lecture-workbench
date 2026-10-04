@@ -1,0 +1,94 @@
+<section id="bs-overview">
+<h2 class="chapter-title">1.0 本讲主线</h2>
+<dl class="chapter-spine" aria-label="本讲学习主线">
+<div><dt>本讲问题</dt><dd>在一百万个有序数字里找一个数，为什么最多只要比较 20 次？</dd></div>
+<div><dt>关键证据</dt><dd>逐步追踪一次查找；对比不同规模下线性查找与二分查找的最坏比较次数。</dd></div>
+<div><dt>要解释的机制</dt><dd>有序性让一次比较就能排除一半候选；循环不变式保证目标若存在就一定还在区间内。</dd></div>
+<div><dt>迁移目标</dt><dd>判断一个新问题能否「每次排除一半」：猜数字、定位引入 bug 的提交。</dd></div>
+</dl>
+<p><span class="term"><span class="en">Binary search</span> <span class="zh">(二分查找)</span></span>在<span class="term"><span class="en">Sorted array</span> <span class="zh">(有序数组)</span></span>里查找目标：每次看中间元素，根据大小关系丢掉一半，直到找到或区间为空。</p>
+</section>
+
+<section id="bs-mechanism">
+<h2 class="chapter-title">1.1 每次比较排除一半</h2>
+<p>可以复述的判断：<strong>因为数组有序，中间元素比目标小，就说明左半边全都比目标小，可以整体丢掉。</strong>这一步是二分查找的全部力量来源。</p>
+<pre class="diagram">def binary_search(items, target):
+    lo, hi = 0, len(items) - 1
+    while lo &lt;= hi:                 # 区间 [lo, hi] 非空
+        mid = (lo + hi) // 2
+        if items[mid] == target:
+            return mid
+        elif items[mid] &lt; target:
+            lo = mid + 1             # 左半边连同 mid 都排除
+        else:
+            hi = mid - 1             # 右半边连同 mid 都排除
+    return -1                        # 区间空了：目标不存在</pre>
+<p>在 <code>[3, 8, 15, 23, 42, 57, 91]</code> 中找 42：</p>
+<table>
+<thead><tr><th>第几次比较</th><th>lo</th><th>hi</th><th>mid（值）</th><th>结论</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>0</td><td>6</td><td>3（23）</td><td>23 &lt; 42，丢掉左半，lo = 4</td></tr>
+<tr><td>2</td><td>4</td><td>6</td><td>5（57）</td><td>57 &gt; 42，丢掉右半，hi = 4</td></tr>
+<tr><td>3</td><td>4</td><td>4</td><td>4（42）</td><td>找到，返回 4</td></tr>
+</tbody>
+</table>
+<p>代码正确的依据是一条<span class="term"><span class="en">Invariant</span> <span class="zh">(循环不变式)</span></span>：<strong>如果目标在数组里，它一定在 [lo, hi] 之内。</strong>每次更新 lo 或 hi 只丢掉「已证明不可能」的部分，所以不变式一直成立；区间变空时就能断定目标不存在。</p>
+<div class="quiz-card" id="bs-c01"><h4>理解检查</h4><p>如果把 <code>lo = mid + 1</code> 写成 <code>lo = mid</code>，在什么输入下循环会停不下来？</p><button class="quiz-toggle" aria-expanded="false" onclick="toggleQuiz(this)">查看判断要点</button><div class="quiz-a"><p>当 lo 与 hi 相邻、且 items[lo] 小于目标时：mid 算出来等于 lo，执行 <code>lo = mid</code> 后区间没有缩小，下一轮完全重复。例如在 [1, 3] 里找 5：lo=0、hi=1、mid=0，1 &lt; 5 → lo 仍是 0。区间必须每轮严格变小，循环才会结束。</p></div></div>
+</section>
+
+<section id="bs-cost">
+<h2 class="chapter-title">1.2 步数为什么是 log₂ n</h2>
+<p>可以复述的判断：<strong>每次比较把候选数量减半，所以 n 个元素最坏只要 ⌊log₂ n⌋ + 1 次比较。</strong></p>
+<div class="teaching-block evidence-block"><span class="block-label">证据</span><h4>最坏情况的比较次数</h4>
+<table>
+<thead><tr><th>元素个数 n</th><th>线性查找最坏</th><th>二分查找最坏</th></tr></thead>
+<tbody>
+<tr><td>7</td><td>7</td><td>3</td></tr>
+<tr><td>100</td><td>100</td><td>7</td></tr>
+<tr><td>1,000</td><td>1,000</td><td>10</td></tr>
+<tr><td>1,000,000</td><td>1,000,000</td><td>20</td></tr>
+</tbody>
+</table>
+<p>2²⁰ = 1,048,576 ≥ 1,000,000，所以一百万个元素减半 20 次后必然只剩不超过一个候选。n 翻倍，二分查找只多 1 次比较；线性查找的次数也跟着翻倍。这就是<span class="term"><span class="en">Logarithmic time</span> <span class="zh">(对数时间)</span></span>与<span class="term"><span class="en">Linear search</span> <span class="zh">(线性查找)</span></span>的差别。</p></div>
+<div class="teaching-block limitation-block"><span class="block-label">限制</span><h4>这张表不能说明什么？</h4><p>表里只算「比较次数」，没有算排序成本。数组本来无序时，先排序要 O(n log n)；如果只查一次，直接线性扫描 O(n) 反而更省。二分查找的优势来自<strong>排好一次、查很多次</strong>。</p></div>
+</section>
+
+<section id="bs-pitfalls">
+<h2 class="chapter-title">1.3 前提与边界</h2>
+<p>可以复述的判断：<strong>二分查找依赖两个前提：数据按比较的顺序排好，并且能直接跳到中间位置。</strong>缺任何一个，算法要么给出错误答案，要么失去速度优势。</p>
+<div class="teaching-block misconception-block"><span class="block-label">易混淆</span><h4>四个常见错误</h4>
+<ul>
+<li><strong>对无序数据二分</strong>：不会报错，但可能把存在的元素报告为「找不到」，因为被丢掉的那一半里其实可能有目标。</li>
+<li><strong>用在链表上</strong>：链表没有<span class="term"><span class="en">Random access</span> <span class="zh">(随机访问)</span></span>，走到中间本身就要 O(n) 步，二分的优势消失。</li>
+<li><strong>边界差一</strong>：<code>&lt;=</code> 写成 <code>&lt;</code>、或 <code>mid ± 1</code> 漏掉，是典型的<span class="term"><span class="en">Off-by-one error</span> <span class="zh">(差一错误)</span></span>：漏查最后一个元素，或陷入死循环。</li>
+<li><strong>有重复值时以为返回第一个</strong>：上面的写法返回「某一个」匹配位置。要第一个出现的位置，需要找到后继续向左收缩（Python 标准库的 <code>bisect_left</code> 就是这样做的）。</li>
+</ul>
+<p>另外，在 Java、C 这类定长整数的语言里，<code>(lo + hi) / 2</code> 在数组极大时可能溢出，惯用写法是 <code>lo + (hi - lo) / 2</code>。Python 的整数不会溢出，所以示例代码里没有这个问题。</p></div>
+</section>
+
+<section id="bs-transfer">
+<h2 class="chapter-title">1.4 迁移：同一个机制换场景</h2>
+<p>可以复述的判断：<strong>只要一次「检查」能把候选分成「一定不在这边」和「可能在那边」，就能二分。</strong>不一定需要数组。</p>
+<div class="teaching-block transfer-block"><span class="block-label">迁移</span><h4>两个新情境</h4>
+<ul>
+<li><strong>猜 1–100 的数字</strong>，对方只回答「大了 / 小了 / 对了」：每次猜中间值，最多 7 次（2⁷ = 128 ≥ 100）。</li>
+<li><strong>定位引入 bug 的提交</strong>：已知旧版本正常、新版本有 bug，且中间每个版本只会是「好」或「坏」、一旦变坏就一直坏。测中间那个版本就能丢掉一半历史。<code>git bisect</code> 自动化的就是这个过程。</li>
+</ul>
+<p>后一个例子的前提是「好→坏」只变化一次。如果 bug 时有时无，一次测试就不能可靠地排除一半，二分的结论也就不可信。</p></div>
+<div class="quiz-card" id="bs-c02"><h4>迁移检查</h4><p>你在调一个机器学习模型的学习率：太大时训练发散，太小时收敛太慢。能不能二分查找「刚好不发散」的最大学习率？需要什么前提？</p><button class="quiz-toggle" aria-expanded="false" onclick="toggleQuiz(this)">查看判断要点</button><div class="quiz-a"><p>可以，前提是单调性：某个阈值以下都不发散，以上都发散。这样每试一个中间值，就能确定阈值在左边还是右边。如果训练结果受随机种子影响很大，同一个学习率时而发散时而不发散，单次试验就不能可靠地排除一半，需要重复试验或换方法。</p></div></div>
+</section>
+
+<section id="bs-flashcards">
+<h2 class="chapter-title">1.5 抽认卡</h2>
+<p>先用自己的话说出机制，再翻面核对。</p>
+<div class="flashcard-wrapper">
+<div class="flashcard" id="flashcard-element" onclick="flipCard()" tabindex="0" role="button" aria-label="翻转抽认卡"><div class="flashcard-type" id="fc-type"></div><div class="flashcard-text" id="fc-front"></div><div class="flashcard-sub" id="fc-sub"></div></div>
+<div class="flashcard-controls"><button class="fc-btn fc-btn-sec" onclick="prevCard()">上一张</button><span id="fc-counter"></span><button class="fc-btn fc-btn-sec" onclick="nextCard()">下一张</button><button class="fc-btn fc-btn-sec" onclick="shuffleCards()">随机</button></div>
+</div>
+</section>
+
+<section id="bs-practice">
+<h2 class="chapter-title">1.6 选择题</h2>
+<p>答错先回到对应小节想清楚机制，再看解析。已答 <b id="mcq-done">0</b> 题，正确 <b id="mcq-score">0</b> 题。<button class="fc-btn fc-btn-sec" onclick="resetMCQ()">重新作答</button></p>
+<div id="mcq-app" class="mcq-container"></div>
+</section>
