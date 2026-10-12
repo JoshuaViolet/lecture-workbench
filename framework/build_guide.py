@@ -6,14 +6,18 @@ Usage:
     python3 framework/build_guide.py <subject_dir> [--validate]
     python3 framework/build_guide.py --all [--validate]     every subject under subjects/
 
-Input:   framework/template.html
+Input:   framework/template.html      page skeleton; pulls in framework/src/css/*.css and src/js/*.js
          <subject_dir>/config.json     identity, titles, header/nav HTML, output file name
          <subject_dir>/content.html    the lesson body
          <subject_dir>/data.json       flashcards, mcqData, termLexicon
          <subject_dir>/subject_css.css, subject_js.js   (optional)
 Output:  <subject_dir>/<config.output>
 
-The template is filled in two passes. Placeholders ({{NAME}}) are replaced first,
+The engine's CSS and JS live in modules under framework/src/. Each module is pasted
+in place of its @@INCLUDE:...@@ marker in template.html, indented to match the marker,
+so the result is still one self-contained file.
+
+The template is then filled in two passes. Placeholders ({{NAME}}) are replaced first,
 each escaped for where it appears; then zones (@@ZONE:...@@) are filled in a single
 regex pass, so text inside content.html or data.json is never re-read as a marker.
 """
@@ -26,6 +30,9 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+MODULE_EXTS = (".css", ".js")
+INCLUDE_RE = re.compile(r"^([ \t]*)(?:/\* @@INCLUDE:([\w./-]+)@@ \*/|// @@INCLUDE:([\w./-]+)@@)[ \t]*$", re.M)
+HOLE_RE = re.compile(r"@@(?:INCLUDE|ZONE):|\{\{[A-Z_]+\}\}")
 
 DATA_ARRAYS = ("flashcards", "mcqData", "termLexicon")
 ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
@@ -130,10 +137,47 @@ def check_data(data):
     return errors
 
 
+def assemble_template(framework_dir=HERE):
+    """Return template.html with every @@INCLUDE@@ marker replaced by its module from src/.
+
+    Each module line is indented like its marker. Every module under src/ must be included
+    exactly once, and modules hold no markers of their own: all holes stay in template.html.
+    """
+    src = os.path.join(framework_dir, "src")
+    tpl = read(os.path.join(framework_dir, "template.html"))
+    errors, used = [], []
+
+    def include(m):
+        indent, name = m.group(1), m.group(2) or m.group(3)
+        path = os.path.normpath(os.path.join(src, name))
+        if not name.endswith(MODULE_EXTS) or not path.startswith(src + os.sep) or not os.path.isfile(path):
+            errors.append(f"template.html includes {name}, which is not a .css or .js file under src/")
+            return ""
+        if name in used:
+            errors.append(f"template.html includes {name} more than once")
+        used.append(name)
+        text = read(path)
+        if HOLE_RE.search(text):
+            errors.append(f"src/{name} contains a marker or placeholder; keep those in template.html")
+        return "\n".join(indent + line if line else line for line in text.rstrip("\n").split("\n"))
+
+    tpl = INCLUDE_RE.sub(include, tpl)
+    for dirpath, _, filenames in os.walk(src):
+        for f in sorted(filenames):
+            name = os.path.relpath(os.path.join(dirpath, f), src).replace(os.sep, "/")
+            if f.endswith(MODULE_EXTS) and name not in used:
+                errors.append(f"src/{name} is not included by template.html")
+    if "@@INCLUDE:" in tpl:
+        errors.append("template.html has an @@INCLUDE@@ marker that is not on a line of its own")
+    if errors:
+        raise BuildError("\n".join(errors))
+    return tpl
+
+
 def build(subject_dir):
     """Build one subject and return the output path. Raises BuildError listing every problem found."""
     subject_dir = os.path.abspath(subject_dir)
-    tpl = read(os.path.join(HERE, "template.html"))
+    tpl = assemble_template()
 
     try:
         cfg = json.loads(read(os.path.join(subject_dir, "config.json")))

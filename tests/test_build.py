@@ -18,7 +18,7 @@ def built(path):
 
 def test_demo_builds_with_data_injected_as_json(make_subject):
     out = built(build_guide.build(str(make_subject())))
-    assert not re.search(r"\{\{[A-Z_]+\}\}|@@ZONE", out)
+    assert not re.search(r"\{\{[A-Z_]+\}\}|@@ZONE|@@INCLUDE", out)
     line = re.search(r"^\s*const mcqData = (\[.*\]);$", out, re.M).group(1)
     assert json.loads(line) == DEMO_DATA["mcqData"]
 
@@ -44,6 +44,35 @@ def test_content_text_is_never_treated_as_a_marker(make_subject):
     content = "<section id='s'><p>{{TITLE}} and <!-- @@ZONE:NAV@@ --> stay literal</p></section>"
     out = built(build_guide.build(str(make_subject(content=content))))
     assert "{{TITLE}} and <!-- @@ZONE:NAV@@ --> stay literal" in out
+
+
+def make_framework(tmp_path, template, modules):
+    fw = tmp_path / "framework"
+    for name, text in modules.items():
+        (fw / "src" / name).parent.mkdir(parents=True, exist_ok=True)
+        (fw / "src" / name).write_text(text, encoding="utf-8")
+    (fw / "template.html").write_text(template, encoding="utf-8")
+    return str(fw)
+
+
+def test_modules_are_pasted_at_their_marker_indent(tmp_path):
+    fw = make_framework(tmp_path, "<style>\n    /* @@INCLUDE:css/a.css@@ */\n</style>\n"
+                                  "<script>\n  // @@INCLUDE:js/b.js@@\n</script>\n",
+                        {"css/a.css": "a {\n    color: red;\n}\n\nb {}\n", "js/b.js": "let x = 1;\n"})
+    assert build_guide.assemble_template(fw) == ("<style>\n    a {\n        color: red;\n    }\n\n    b {}\n"
+                                                 "</style>\n<script>\n  let x = 1;\n</script>\n")
+
+
+def test_include_problems_are_all_reported(tmp_path):
+    fw = make_framework(tmp_path, "/* @@INCLUDE:css/missing.css@@ */\n// @@INCLUDE:../escape.js@@\n"
+                                  "// @@INCLUDE:js/holey.js@@\n",
+                        {"css/unused.css": "a {}\n", "js/holey.js": "const t = {{TITLE}};\n"})
+    with pytest.raises(build_guide.BuildError) as e:
+        build_guide.assemble_template(fw)
+    msg = str(e.value)
+    for part in ("css/missing.css, which is not", "../escape.js, which is not",
+                 "src/js/holey.js contains a marker", "src/css/unused.css is not included"):
+        assert part in msg
 
 
 @pytest.mark.parametrize("data, message", [

@@ -14,10 +14,17 @@ lecture-workbench is a small static-site generator with a single target: one HTM
 config.json ─┐
 content.html ├─► build_guide.py ──► <output>.html ──► validate_guide.py
 data.json ───┘        ▲
-                      └── framework/template.html
+                      └── framework/template.html + framework/src/{css,js}/*
 ```
 
-`template.html` holds the whole engine: CSS, runtime JS and the HTML skeleton. It has two kinds of holes:
+The engine is split into a page skeleton and modules:
+
+- `framework/template.html` is the HTML skeleton. It decides the order of everything: each CSS and JS module is pulled in by a marker on a line of its own, `/* @@INCLUDE:css/print.css@@ */` or `// @@INCLUDE:js/notes.js@@`.
+- `framework/src/css/*.css` and `framework/src/js/*.js` are the modules, one per part of the page (sidebar, annotations, term cards, print, …). They are plain CSS and JS with no markers or placeholders, so they can be read and edited like ordinary source files.
+
+The builder first pastes each module in place of its marker, indented like the marker, so the output is still one dependency-free file. A module that is missing, included twice or not included at all fails the build. Order matters: CSS later in the skeleton wins the cascade, and all JS modules share one script scope, so they call each other's functions directly.
+
+All holes stay in `template.html`. It has two kinds:
 
 - **Placeholders** `{{NAME}}` for short values from `config.json`. Each is escaped for the context it lands in: HTML text, an HTML attribute, or a JavaScript literal (`json.dumps`, plus `</` → `<\/` so a string can never close the `<script>` element).
 - **Zones** `@@ZONE:NAME@@` for whole files: the content body, header and nav HTML, optional subject CSS/JS, and the three data arrays.

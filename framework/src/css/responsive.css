@@ -1,0 +1,21 @@
+@media (max-width: 900px) {
+    #sidebar {
+        transform: translateX(-100%);
+    }
+    #sidebar-toggle-pill {
+        left: 16px !important;
+    }
+    body.sidebar-open #sidebar {
+        transform: translateX(0);
+    }
+    body.sidebar-open #sidebar-backdrop {
+        display: block;
+    }
+    #main-content {
+        margin-left: 0 !important;
+        padding: 68px 20px 20px 20px !important;
+    }
+    .sb-display {
+        grid-template-columns: 1fr;
+    }
+}
