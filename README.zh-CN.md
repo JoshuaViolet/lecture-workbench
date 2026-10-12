@@ -22,13 +22,29 @@
 ```bash
 git clone https://github.com/JoshuaViolet/lecture-workbench.git
 cd lecture-workbench
-python3 framework/build_guide.py --all --validate
+python3 framework/cli.py build --all --validate
 open subjects/demo-binary-search/Binary_Search_Demo.html
 ```
 
+## 命令
+
+`framework/cli.py` 有三个子命令：
+
+```bash
+python3 framework/cli.py new subjects/my-lecture --title "My Lecture"   # 新建一个科目
+python3 framework/cli.py build subjects/my-lecture --validate           # 构建并检查页面
+python3 framework/cli.py validate subjects/my-lecture --strict          # 检查已经构建好的页面
+```
+
+- `new <文件夹> [--title 标题] [--doc-id ID] [--output 文件名.html]`：生成 `config.json`、`content.html`、`data.json`，正文、术语卡、抽认卡、选择题各带一个示例，不改也能构建并通过 `--strict` 检查。不指定时，`doc_id` 和输出文件名由文件夹名推出；文件夹名没有英文字母或数字（比如「线性代数」）时需要手动给 `--doc-id` 和 `--output`。目标文件夹非空、或 `doc_id` 已被同级目录或 `subjects/` 下的其他科目占用时会拒绝。
+- `build (<文件夹>... | --all) [--validate] [--strict]`：把科目构建成单文件页面，某个科目失败也会继续构建其余的。`--all` 构建 `subjects/` 下所有带 `config.json` 的文件夹。
+- `validate (<文件夹> | <页面.html>) [--strict]`：检查已构建的页面；给文件夹时检查 `config.output` 指定的那个文件。
+
+失败时退出码非零，可以直接放进 CI。`framework/build_guide.py` 和 `framework/validate_guide.py` 仍可单独运行，参数不变。
+
 ## 写一个科目
 
-在 `subjects/` 下建一个文件夹，放四样东西：
+在 `subjects/` 下建一个文件夹（`cli.py new` 会帮你建好），放四样东西：
 
 - `config.json`：标识、标题、页头和目录 HTML、输出文件名。`doc_id` 是本地存储的命名空间，各讲义之间不能重复，开始使用后也不要再改。可选的 `lang` 决定页面自身界面（工具栏、目录、提示、打印页）的语言：`"zh"` 为简体中文（默认），`"en"` 为英文；正文用什么语言由你决定。界面文字都在 `framework/ui_strings.json` 里。
 - `content.html`：正文，由若干 `<section>` 组成。
@@ -39,7 +55,7 @@ open subjects/demo-binary-search/Binary_Search_Demo.html
 
 ## 验证
 
-`build_guide.py --validate` 会检查生成页面的结构（锚点、元素 id、事件函数、标签配对、脚本语法）和内容（LaTeX 残留、图片、术语卡覆盖），并对选择题做教学质量检查：正确选项是否经常是最长的一个、答案是否集中在同一个字母、是否有重复题目。质量检查默认只给警告，加 `--strict` 会让它变成失败。
+`cli.py build --validate`（或 `cli.py validate`）会检查生成页面的结构（锚点、元素 id、事件函数、标签配对、脚本语法）和内容（LaTeX 残留、图片、术语卡覆盖），并对选择题做教学质量检查：正确选项是否经常是最长的一个、答案是否集中在同一个字母、是否有重复题目。质量检查默认只给警告，加 `--strict` 会让它变成失败。
 
 ## 开发
 

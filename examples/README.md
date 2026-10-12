@@ -46,4 +46,4 @@
 - 浅色、暗色和打印都有真实文本标签，不依赖底色表达含义。
 - 打印时短卡优先保持完整；已知长卡在基础类后加 `allow-page-break`，允许自然分页。没有固定高度或裁切。打印中的网格退为纵向排列。
 - 旧 callout 不自动转换。新增正式正文时保留已有 section ID；增加标题可能让已保存的高亮/批注容器索引漂移（引擎会按文本回退查找）。
-- 改动框架后运行 `python3 framework/build_guide.py --all --validate`，确认全部科目全绿。
+- 改动框架后运行 `python3 framework/cli.py build --all --validate`，确认全部科目全绿。
