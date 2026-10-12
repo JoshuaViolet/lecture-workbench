@@ -9,7 +9,7 @@ Turn lecture notes into a **single, self-contained HTML study guide** that works
 
 ![A demo guide with a highlight across bold text, a margin note and a term card](docs/screenshot.png)
 
-> Status: **v0.1, early**. I built this for my own university courses and extracted it into a reusable tool. The page interface comes in Simplified Chinese (default) or English. Open problems are listed in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+> Status: **v0.2, early**. I built this for my own university courses and extracted it into a reusable tool. The page interface comes in Simplified Chinese (default) or English. Open problems are listed in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## Features
 
