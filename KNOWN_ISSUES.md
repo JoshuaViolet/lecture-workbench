@@ -11,11 +11,11 @@ Fixed issues are recorded in [CHANGELOG.md](CHANGELOG.md). This file lists what 
 
 ## Structure
 
-5. The build is a script, not an installable tool. Plan: a small CLI (`new`, `build`, `validate`) published as a package.
+5. The CLI (`framework/cli.py`: `new`, `build`, `validate`) runs from a checkout, not as an installed package. Plan: package it with the template as package data and a console-script entry point.
 
 ## Roadmap
 
 | Next | Goal |
 |---|---|
-| 0.2 | CLI; `new` command that scaffolds a subject |
+| 0.3 | Publish the CLI as a package |
 | later | Optional, pluggable study assistant (OpenAI-compatible endpoint or a local model), off by default so the offline core stays dependency-free |

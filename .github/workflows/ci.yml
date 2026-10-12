@@ -24,6 +24,6 @@ jobs:
           pip install -r requirements-dev.txt
           python -m playwright install --with-deps chromium
       - name: Build and validate every subject
-        run: python framework/build_guide.py --all --validate
+        run: python framework/cli.py build --all --validate
       - name: Run tests
         run: pytest

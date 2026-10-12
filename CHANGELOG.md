@@ -4,6 +4,8 @@
 
 ### Added
 - English interface. Set `"lang": "en"` in a subject's `config.json`; the default stays Simplified Chinese. Interface strings moved out of `template.html` into `framework/ui_strings.json`, and the build checks that every language defines the same strings.
+- `framework/cli.py` with `new` (scaffold a subject that builds and validates as is), `build` and `validate` subcommands.
+- `build_guide.py --validate --strict` passes `--strict` on to the validator.
 
 ### Changed
 - `framework/template.html` is now a page skeleton; the engine's CSS and JS live in modules under `framework/src/` and are inlined at build time. Built guides are unchanged, byte for byte.

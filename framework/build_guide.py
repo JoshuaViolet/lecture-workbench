@@ -3,8 +3,8 @@
 build_guide.py: build a single-file, offline study guide from a subject folder.
 
 Usage:
-    python3 framework/build_guide.py <subject_dir> [--validate]
-    python3 framework/build_guide.py --all [--validate]     every subject under subjects/
+    python3 framework/build_guide.py <subject_dir> [--validate [--strict]]
+    python3 framework/build_guide.py --all [--validate [--strict]]     every subject under subjects/
 
 Input:   framework/template.html      page skeleton; pulls in framework/src/css/*.css and src/js/*.js
          framework/ui_strings.json     interface strings, one table per language
@@ -309,7 +309,6 @@ def find_subject_dirs(subjects_root):
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     paths = [a for a in argv if not a.startswith("--")]
-    do_validate = "--validate" in argv
     if "--all" in argv:
         subjects = find_subject_dirs(os.path.join(ROOT, "subjects"))
         if not subjects:
@@ -320,7 +319,11 @@ def main(argv=None):
     else:
         print(__doc__.strip().split("\n\n")[1])
         return 2
+    return build_many(subjects, validate="--validate" in argv, strict="--strict" in argv)
 
+
+def build_many(subjects, validate=False, strict=False):
+    """Build every subject, validating each output if asked; keep going after a failure. Returns an exit code."""
     failed = []
     for subject in subjects:
         label = os.path.relpath(os.path.abspath(subject), os.getcwd())
@@ -331,8 +334,9 @@ def main(argv=None):
             failed.append(label)
             continue
         print(f"BUILD OK      {label} -> {os.path.basename(out)}", flush=True)
-        if do_validate:
-            r = subprocess.run([sys.executable, os.path.join(HERE, "validate_guide.py"), out])
+        if validate:
+            r = subprocess.run([sys.executable, os.path.join(HERE, "validate_guide.py"), out]
+                               + (["--strict"] if strict else []))
             if r.returncode != 0:
                 failed.append(label)
 

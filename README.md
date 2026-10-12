@@ -27,13 +27,31 @@ Requires Python 3.9+ and Node.js (the validator uses Node to syntax-check the pa
 ```bash
 git clone https://github.com/JoshuaViolet/lecture-workbench.git
 cd lecture-workbench
-python3 framework/build_guide.py --all --validate
+python3 framework/cli.py build --all --validate
 open subjects/demo-binary-search/Binary_Search_Demo.html
 ```
 
+## Commands
+
+`framework/cli.py` has three subcommands:
+
+```bash
+python3 framework/cli.py new subjects/my-lecture --title "My Lecture"   # scaffold a subject
+python3 framework/cli.py build subjects/my-lecture --validate           # build, then check the page
+python3 framework/cli.py validate subjects/my-lecture --strict          # check an already built page
+```
+
+| Command | Does |
+|---|---|
+| `new <dir> [--title T] [--doc-id ID] [--output NAME.html]` | Creates `config.json`, `content.html` and `data.json` with one example of each part (section, term card, flashcard, question). The result builds and passes `--strict` as is. Ids and the output name come from the folder name unless given; `new` refuses a folder that is not empty and a `doc_id` another subject under the same parent or `subjects/` already uses. |
+| `build (<dir>... \| --all) [--validate] [--strict]` | Builds each subject into its single-file guide and keeps going after a failure. `--all` builds every folder with a `config.json` under `subjects/`. |
+| `validate (<dir> \| <guide.html>) [--strict]` | Runs the checks below on a built guide. Given a subject folder, it checks the file named by `config.output`. |
+
+Every command exits non-zero on failure, so they work in CI. `framework/build_guide.py` and `framework/validate_guide.py` still run on their own with the same flags.
+
 ## Writing a subject
 
-A subject is a folder under `subjects/`:
+A subject is a folder under `subjects/` (`cli.py new` creates one):
 
 ```
 subjects/my-lecture/
@@ -85,7 +103,7 @@ Coming from the older `data.js` format: `python3 framework/migrate_datajs.py sub
 
 ## Validation
 
-`build_guide.py --validate` (or `validate_guide.py <guide.html>`) checks the generated page:
+`cli.py build --validate` (or `cli.py validate`) checks the generated page:
 
 | Check | Catches |
 |---|---|
