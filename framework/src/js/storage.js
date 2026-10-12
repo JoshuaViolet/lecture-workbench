@@ -18,7 +18,7 @@ function readList(key) {
 }
 function writeList(key, list) {
     if (!lsSet(key, JSON.stringify(list))) {
-        showToast("⚠️ 浏览器存储不可用或已满，本次修改未保存。请导出备份。");
+        showToast(UI.toast_storage_failed);
         return false;
     }
     return true;

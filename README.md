@@ -9,7 +9,7 @@ Turn lecture notes into a **single, self-contained HTML study guide** that works
 
 ![A demo guide with a highlight across bold text, a margin note and a term card](docs/screenshot.png)
 
-> Status: **v0.1, early**. I built this for my own university courses and extracted it into a reusable tool. The page UI is in Simplified Chinese for now. Open problems are listed in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+> Status: **v0.1, early**. I built this for my own university courses and extracted it into a reusable tool. The page interface comes in Simplified Chinese (default) or English. Open problems are listed in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## Features
 
@@ -51,12 +51,15 @@ subjects/my-lecture/
   "app_id": "my-lecture-guide",
   "title": "My Lecture",
   "output": "My_Lecture.html",
+  "lang": "en",
   "header_html": "<header class=\"doc-header\"><h1>My Lecture</h1></header>",
   "nav_html": "<li><a href=\"#intro\">Introduction</a></li>"
 }
 ```
 
 `doc_id` namespaces everything the guide stores, so it must be unique across your guides and must not change after you start using a guide.
+
+`lang` sets the language of the page's own interface (toolbar, sidebar, messages, print sheet): `"zh"` for Simplified Chinese (the default) or `"en"` for English. Your lesson content is written in whatever language you like. The strings live in [`framework/ui_strings.json`](framework/ui_strings.json); to add a language, add a table with the same keys.
 
 `data.json` (checked at build time; errors point at the exact item and field):
 

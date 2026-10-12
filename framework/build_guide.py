@@ -7,6 +7,7 @@ Usage:
     python3 framework/build_guide.py --all [--validate]     every subject under subjects/
 
 Input:   framework/template.html      page skeleton; pulls in framework/src/css/*.css and src/js/*.js
+         framework/ui_strings.json     interface strings, one table per language
          <subject_dir>/config.json     identity, titles, header/nav HTML, output file name
          <subject_dir>/content.html    the lesson body
          <subject_dir>/data.json       flashcards, mcqData, termLexicon
@@ -17,8 +18,9 @@ The engine's CSS and JS live in modules under framework/src/. Each module is pas
 in place of its @@INCLUDE:...@@ marker in template.html, indented to match the marker,
 so the result is still one self-contained file.
 
-The template is then filled in two passes. Placeholders ({{NAME}}) are replaced first,
-each escaped for where it appears; then zones (@@ZONE:...@@) are filled in a single
+The template is then filled in two passes. Placeholders ({{NAME}}, and {{UI:key}} for interface
+strings in the subject's language) are replaced first, each escaped for where it appears;
+then zones (@@ZONE:...@@) are filled in a single
 regex pass, so text inside content.html or data.json is never re-read as a marker.
 """
 import html
@@ -37,6 +39,9 @@ HOLE_RE = re.compile(r"@@(?:INCLUDE|ZONE):|\{\{[A-Z_]+\}\}")
 DATA_ARRAYS = ("flashcards", "mcqData", "termLexicon")
 ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 OUTPUT_RE = re.compile(r"^[A-Za-z0-9_.-]+\.html$")
+UI_STRINGS = os.path.join(HERE, "ui_strings.json")
+DEFAULT_LANG = "zh"
+UI_SLOT_RE = re.compile(r"\{(\w+)\}")
 
 CONFIG_FIELDS = {
     # name: (required, description)
@@ -44,6 +49,7 @@ CONFIG_FIELDS = {
     "app_id": (True, "fingerprint written into exported backups"),
     "title": (True, "browser tab title"),
     "output": (True, "generated file name, e.g. My_Guide.html"),
+    "lang": (False, "interface language, 'zh' (default) or 'en'"),
     "sidebar_title": (False, "sidebar heading (defaults to title)"),
     "sidebar_meta": (False, "small text under the sidebar heading"),
     "search_placeholder": (False, "placeholder of the sidebar search box"),
@@ -75,7 +81,33 @@ def js_literal(value):
     return json.dumps(value, ensure_ascii=False).replace("</", "<\\/").replace("<!--", "<\\!--")
 
 
-def check_config(cfg):
+def load_ui_strings():
+    """Return {lang: {key: text}}. Every language must define the same keys with the same {slots}."""
+    try:
+        tables = json.loads(read(UI_STRINGS))
+    except (OSError, json.JSONDecodeError) as e:
+        raise BuildError(f"cannot read {os.path.relpath(UI_STRINGS, ROOT)}: {e}")
+    base = tables.get(DEFAULT_LANG)
+    if not isinstance(base, dict):
+        raise BuildError(f"ui_strings.json has no {DEFAULT_LANG!r} table")
+    errors = []
+    for lang, table in sorted(tables.items()):
+        if not isinstance(table, dict) or not all(isinstance(v, str) for v in table.values()):
+            errors.append(f"ui_strings.{lang} must map keys to strings")
+            continue
+        for key in sorted(set(base) - set(table)):
+            errors.append(f"ui_strings.{lang} is missing {key!r}")
+        for key in sorted(set(table) - set(base)):
+            errors.append(f"ui_strings.{lang}.{key} is not in the {DEFAULT_LANG!r} table")
+        for key in sorted(set(base) & set(table)):
+            if set(UI_SLOT_RE.findall(table[key])) != set(UI_SLOT_RE.findall(base[key])):
+                errors.append(f"ui_strings.{lang}.{key} must use the same {{slots}} as {DEFAULT_LANG!r}")
+    if errors:
+        raise BuildError("\n".join(errors))
+    return tables
+
+
+def check_config(cfg, languages=(DEFAULT_LANG,)):
     errors, warnings = [], []
     if not isinstance(cfg, dict):
         raise BuildError("config.json must contain a JSON object")
@@ -90,6 +122,9 @@ def check_config(cfg):
     out = cfg.get("output")
     if isinstance(out, str) and out and (not OUTPUT_RE.match(out) or out == "content.html"):
         errors.append(f"config.output {out!r} must be a plain *.html file name other than content.html")
+    lang = cfg.get("lang")
+    if isinstance(lang, str) and lang not in languages:
+        errors.append(f"config.lang {lang!r} is not supported (expected one of {', '.join(sorted(languages))})")
     for name in sorted(set(cfg) - set(CONFIG_FIELDS)):
         warnings.append(f"config.{name} is not used by the framework and is ignored")
     return errors, warnings
@@ -178,6 +213,7 @@ def build(subject_dir):
     """Build one subject and return the output path. Raises BuildError listing every problem found."""
     subject_dir = os.path.abspath(subject_dir)
     tpl = assemble_template()
+    ui_tables = load_ui_strings()
 
     try:
         cfg = json.loads(read(os.path.join(subject_dir, "config.json")))
@@ -185,7 +221,7 @@ def build(subject_dir):
         raise BuildError("missing config.json")
     except json.JSONDecodeError as e:
         raise BuildError(f"config.json is not valid JSON: {e}")
-    errors, warnings = check_config(cfg)
+    errors, warnings = check_config(cfg, tuple(ui_tables))
 
     data_path = os.path.join(subject_dir, "data.json")
     data = {}  # a guide without practice widgets is allowed
@@ -206,16 +242,24 @@ def build(subject_dir):
         print(f"  warning: {w}")
 
     # --- pass 1: placeholders, escaped for their context ---
+    # Interface strings go first, so text from config.json is never read as a {{UI:key}}.
+    ui = ui_tables[cfg.get("lang") or DEFAULT_LANG]
+    unknown = sorted({k for k in re.findall(r"\{\{UI:(\w+)\}\}", tpl) if k not in ui})
+    if unknown:
+        raise BuildError(f"template.html uses interface strings missing from ui_strings.json: {unknown}")
+    tpl = re.sub(r"\{\{UI:(\w+)\}\}", lambda m: html.escape(ui[m.group(1)], quote=True), tpl)
+
     title = cfg["title"]
     sidebar_title = cfg.get("sidebar_title") or title
     placeholders = {
         "{{TITLE}}": html.escape(title, quote=False),
         "{{SIDEBAR_TITLE}}": html.escape(sidebar_title, quote=False),
         "{{SIDEBAR_META}}": html.escape(cfg.get("sidebar_meta", ""), quote=False),
-        "{{SEARCH_PLACEHOLDER}}": html.escape(cfg.get("search_placeholder") or "🔍 搜索目录…", quote=True),
+        "{{SEARCH_PLACEHOLDER}}": html.escape(cfg.get("search_placeholder") or ui["search_placeholder"], quote=True),
         "{{DOC_ID_JSON}}": js_literal(cfg["doc_id"]),
         "{{APP_ID_JSON}}": js_literal(cfg["app_id"]),
         "{{GUIDE_TITLE_JSON}}": js_literal(sidebar_title),
+        "{{UI_STRINGS_JSON}}": js_literal(ui),
     }
     for token, value in placeholders.items():
         if token not in tpl:

@@ -96,18 +96,18 @@ function applyHighlight() {
     const res = anchorFromRange(selectedRange);
     clearSelectionUI();
     if (res.error) {
-        showToast(res.error === "unsupported" ? "⚠️ 该区域（如按钮/选项）暂不支持高亮标注。" : "⚠️ 没有选中文字。");
+        showToast(res.error === "unsupported" ? UI.toast_hl_unsupported : UI.toast_no_selection);
         return;
     }
     const id = newId("hl");
     if (!wrapHighlight(res.block, res.anchor.start, res.anchor.end, id).length) {
-        showToast("⚠️ 没有可高亮的文字。");
+        showToast(UI.toast_hl_nothing);
         return;
     }
     const saved = readList(LS.highlights);
     saved.push(Object.assign({ id: id }, res.anchor));
     if (writeList(LS.highlights, saved)) {
-        showToast(res.clipped ? "🖍️ 已高亮并保存（跨段落的选区只保留了第一段）" : "🖍️ 已添加荧光黄色高亮（已自动保存）！");
+        showToast(res.clipped ? UI.toast_hl_clipped : UI.toast_hl_saved);
     }
 }
 
@@ -118,7 +118,7 @@ function removeHighlightAtSelection() {
     writeList(LS.highlights, readList(LS.highlights).filter(h => h.id !== id));
     document.getElementById("text-selection-toolbar").style.display = "none";
     activeHighlightEl = null;
-    showToast("🗑️ 已清除高亮标注！");
+    showToast(UI.toast_hl_removed);
 }
 
 function restoreHighlights() {

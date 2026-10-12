@@ -17,7 +17,7 @@ function exportStudyData() {
     document.body.removeChild(a);
     // revoking right away can cancel the download in some browsers
     setTimeout(() => URL.revokeObjectURL(url), 10000);
-    showToast("📤 已导出高亮与批注备份文件！");
+    showToast(UI.toast_exported);
 }
 
 function isAnnotation(x) {
@@ -32,23 +32,23 @@ function importStudyData(file) {
         try {
             data = JSON.parse(reader.result);
         } catch (e) {
-            showToast("⚠️ 导入失败：文件不是有效的 JSON。");
+            showToast(UI.toast_import_bad_json);
             return;
         }
         if (!data || (!Array.isArray(data.highlights) && !Array.isArray(data.notes))) {
-            showToast("⚠️ 导入失败：文件里没有高亮或批注。");
+            showToast(UI.toast_import_empty);
             return;
         }
         // backups carry the guide's app id; older backups without one are accepted
         if (data.app && data.app !== APP_ID) {
-            if (!confirm("⚠️ 这份备份来自另一个文档（" + data.app + "）。\n导入它可能导致高亮/批注错位。\n仍要继续吗？")) return;
+            if (!confirm(t("confirm_import_other", { app: data.app }))) return;
         }
         const hls = (data.highlights || []).filter(isAnnotation);
         const notes = (data.notes || []).filter(n => isAnnotation(n) && typeof n.note === "string");
         const ok = (!Array.isArray(data.highlights) || writeList(LS.highlights, hls))
             && (!Array.isArray(data.notes) || writeList(LS.notes, notes));
         if (!ok) return;
-        showToast("📥 已导入 " + hls.length + " 条高亮、" + notes.length + " 条批注，正在刷新页面...");
+        showToast(t("toast_imported", { highlights: hls.length, notes: notes.length }));
         setTimeout(() => location.reload(), 900);
     };
     reader.readAsText(file);
@@ -64,25 +64,25 @@ function chapterTitleFor(selector) {
 function copyNotesAsMarkdown() {
     const notes = readList(LS.notes);
     const hls = readList(LS.highlights);
-    if (!notes.length && !hls.length) { showToast("⚠️ 还没有任何批注或高亮。"); return; }
+    if (!notes.length && !hls.length) { showToast(UI.toast_nothing_to_copy); return; }
 
-    let md = "# " + GUIDE_TITLE + " · 我的批注与高亮\n\n";
-    md += "> 导出于 " + new Date().toLocaleString() + "\n\n";
+    let md = "# " + t("md_title", { title: GUIDE_TITLE }) + "\n\n";
+    md += "> " + t("md_exported_at", { date: new Date().toLocaleString() }) + "\n\n";
 
     if (notes.length) {
-        md += "## 📝 我的批注（" + notes.length + " 条）\n\n";
+        md += "## " + t("md_notes", { n: notes.length }) + "\n\n";
         notes.forEach((n, i) => {
             const ch = chapterTitleFor(".note-anchor" + byId("data-note-id", n.id));
-            md += "### 批注 " + (i + 1) + (ch ? "｜" + ch : "") + "\n\n";
-            md += "> 原文：" + n.text + "\n\n";
+            md += "### " + (ch ? t("md_note_in_chapter", { i: i + 1, chapter: ch }) : t("md_note", { i: i + 1 })) + "\n\n";
+            md += "> " + t("md_quote", { text: n.text }) + "\n\n";
             md += n.note + "\n\n";
         });
     }
     if (hls.length) {
-        md += "## 🖍️ 高亮摘记（" + hls.length + " 条）\n\n";
+        md += "## " + t("md_highlights", { n: hls.length }) + "\n\n";
         hls.forEach(h => { md += "- " + h.text + "\n"; });
     }
-    copyText(md, "📋 已复制 Markdown！");
+    copyText(md, UI.toast_md_copied);
 }
 
 function copyText(text, okMsg) {
@@ -100,6 +100,6 @@ function legacyCopy(text, okMsg) {
     document.body.appendChild(ta);
     ta.select();
     try { document.execCommand("copy"); showToast(okMsg); }
-    catch (e) { showToast("⚠️ 复制失败，请手动选择复制。"); }
+    catch (e) { showToast(UI.toast_copy_failed); }
     document.body.removeChild(ta);
 }

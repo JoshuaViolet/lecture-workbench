@@ -4,7 +4,7 @@
 
 [在线示例](https://joshuaviolet.github.io/lecture-workbench/) · [架构说明（英文）](docs/architecture.md) · [English README](README.md)
 
-> 状态：**v0.1，早期版本**。最初是我为自己的大学课程写的工具，现在整理成可复用的框架。页面界面目前是简体中文。未解决的问题见 [KNOWN_ISSUES.md](KNOWN_ISSUES.md)。
+> 状态：**v0.1，早期版本**。最初是我为自己的大学课程写的工具，现在整理成可复用的框架。页面界面支持简体中文（默认）和英文。未解决的问题见 [KNOWN_ISSUES.md](KNOWN_ISSUES.md)。
 
 ## 功能
 
@@ -30,7 +30,7 @@ open subjects/demo-binary-search/Binary_Search_Demo.html
 
 在 `subjects/` 下建一个文件夹，放四样东西：
 
-- `config.json`：标识、标题、页头和目录 HTML、输出文件名。`doc_id` 是本地存储的命名空间，各讲义之间不能重复，开始使用后也不要再改。
+- `config.json`：标识、标题、页头和目录 HTML、输出文件名。`doc_id` 是本地存储的命名空间，各讲义之间不能重复，开始使用后也不要再改。可选的 `lang` 决定页面自身界面（工具栏、目录、提示、打印页）的语言：`"zh"` 为简体中文（默认），`"en"` 为英文；正文用什么语言由你决定。界面文字都在 `framework/ui_strings.json` 里。
 - `content.html`：正文，由若干 `<section>` 组成。
 - `data.json`：`flashcards`、`mcqData`、`termLexicon` 三个数组。构建时会逐条校验，报错会指出具体是哪一项、哪个字段。
 - `assets/`：正文引用的图片（可选）。

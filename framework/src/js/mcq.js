@@ -45,7 +45,7 @@ function initMCQ() {
         const expDiv = document.createElement("div");
         expDiv.className = "mcq-explain";
         expDiv.id = `mcq-exp-${qIdx}`;
-        expDiv.innerHTML = `<strong>【考点解析】</strong>: ${item.exp}`;
+        expDiv.innerHTML = `<strong>${escapeHtml(UI.mcq_explain)}</strong>: ${item.exp}`;
         card.appendChild(expDiv);
 
         container.appendChild(card);

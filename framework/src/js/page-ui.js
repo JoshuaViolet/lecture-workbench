@@ -12,17 +12,17 @@ function toggleTheme() {
     const btn = document.getElementById("theme-toggle-btn");
     if (html.getAttribute("data-theme") === "dark") {
         html.setAttribute("data-theme", "light");
-        btn.textContent = "🌙 暗色";
+        btn.textContent = UI.theme_dark;
         lsSet(LS.theme, "light");
     } else {
         html.setAttribute("data-theme", "dark");
-        btn.textContent = "☀️ 亮色";
+        btn.textContent = UI.theme_light;
         lsSet(LS.theme, "dark");
     }
 }
 if (lsGet(LS.theme) === "dark") {
     document.documentElement.setAttribute("data-theme", "dark");
-    document.getElementById("theme-toggle-btn").textContent = "☀️ 亮色";
+    document.getElementById("theme-toggle-btn").textContent = UI.theme_light;
 }
 
 // Lightbox

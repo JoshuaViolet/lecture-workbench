@@ -29,10 +29,10 @@ function wrapNote(block, start, end, id) {
     return pieces;
 }
 
-// Called from the selection toolbar ("📝 批注" button)
+// Called from the selection toolbar (note button)
 function openNoteEditor() {
     if (!selectedRange || selectedRange.toString().trim() === "") {
-        showToast("⚠️ 请先在正文中划选要批注的文字。");
+        showToast(UI.toast_note_select_first);
         return;
     }
     editingNoteId = null;
@@ -76,7 +76,7 @@ function closeNoteEditor() {
 
 function saveNote() {
     const noteText = document.getElementById("note-editor-text").value.trim();
-    if (!noteText) { showToast("⚠️ 批注内容为空，未保存。"); return; }
+    if (!noteText) { showToast(UI.toast_note_empty); return; }
 
     // Edit path: update in place, no DOM re-anchoring needed
     if (editingNoteId) {
@@ -84,7 +84,7 @@ function saveNote() {
         if (n) {
             n.note = noteText;
             n.ts = Date.now();
-            if (saveNotes()) showToast("💾 批注已更新！");
+            if (saveNotes()) showToast(UI.toast_note_updated);
         }
         closeNoteEditor();
         return;
@@ -95,7 +95,7 @@ function saveNote() {
     const res = anchorFromRange(pendingNoteRange);
     clearSelectionUI();
     if (res.error) {
-        showToast(res.error === "unsupported" ? "⚠️ 该区域（如按钮/选项）暂不支持批注。" : "⚠️ 没有选中文字。");
+        showToast(res.error === "unsupported" ? UI.toast_note_unsupported : UI.toast_no_selection);
         closeNoteEditor();
         return;
     }
@@ -103,10 +103,10 @@ function saveNote() {
     if (wrapNote(res.block, res.anchor.start, res.anchor.end, id).length) {
         notesCache.push(Object.assign({ id: id }, res.anchor, { note: noteText, ts: Date.now() }));
         if (saveNotes()) {
-            showToast(res.clipped ? "📝 批注已保存（跨段落的选区只保留了第一段）" : "📝 批注已保存（请定期从左侧目录底部导出备份）！");
+            showToast(res.clipped ? UI.toast_note_clipped : UI.toast_note_saved);
         }
     } else {
-        showToast("⚠️ 没有可批注的文字。");
+        showToast(UI.toast_note_nothing);
     }
     closeNoteEditor();
 }
@@ -118,7 +118,7 @@ function deleteNote() {
     saveNotes();
     document.querySelectorAll(".note-flag" + byId("data-note-id", id)).forEach(f => f.remove());
     unwrapAll(".note-anchor" + byId("data-note-id", id));
-    showToast("🗑️ 批注已删除！");
+    showToast(UI.toast_note_deleted);
     closeNoteEditor();
 }
 
@@ -127,7 +127,7 @@ function appendNoteFlag(span, noteId) {
     flag.className = "note-flag";
     flag.textContent = "💬";
     flag.dataset.noteId = noteId;
-    flag.title = "查看/编辑批注";
+    flag.title = UI.note_flag_title;
     span.appendChild(flag);
 }
 
