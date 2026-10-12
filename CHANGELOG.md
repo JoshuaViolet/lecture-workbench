@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- `framework/template.html` is now a page skeleton; the engine's CSS and JS live in modules under `framework/src/` and are inlined at build time. Built guides are unchanged, byte for byte.
+
 ## 0.1.0
 
 First public version, extracted from a personal study-guide project.

@@ -1,0 +1,214 @@
+/* Selection Highlighter Toolbar */
+#text-selection-toolbar {
+    display: none;
+    position: absolute;
+    z-index: 1500;
+    background: #0f172a;
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    border: 1px solid #334155;
+    align-items: center;
+    gap: 6px;
+}
+
+.hl-action-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+}
+.hl-action-btn:hover { background: #334155; color: #38bdf8; }
+
+/* Note Anchor & Flag (dashed amber underline + 💬 marker) */
+.note-anchor {
+    border-bottom: 2px dashed var(--accent);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.note-anchor:hover {
+    background-color: var(--accent-bg);
+}
+.note-flag {
+    font-size: 0.68em;
+    margin-left: 2px;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Term Lexicon affordance + hover card */
+#main-content span.en.lexi,
+#main-content strong.lexi {
+    cursor: help;
+    border-bottom: 1px dotted var(--primary-light);
+}
+#term-card {
+    display: none;
+    position: absolute;
+    z-index: 1600;
+    width: min(350px, calc(100vw - 20px));
+    background: var(--bg-card);
+    border: 1px solid var(--border-dark);
+    border-radius: 12px;
+    box-shadow: 0 14px 34px rgba(0,0,0,0.35);
+    padding: 14px 16px;
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+.tc-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+}
+#tc-term {
+    font-weight: 800;
+    color: var(--primary);
+    font-size: 0.95rem;
+}
+#tc-speak {
+    background: var(--primary-bg);
+    border: 1px solid var(--primary-light);
+    color: var(--primary);
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 3px 8px;
+    font-size: 0.82rem;
+    flex-shrink: 0;
+}
+.tc-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+.tc-label {
+    flex-shrink: 0;
+    width: 42px;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    padding-top: 2px;
+}
+#tc-ipa { font-family: var(--font-mono); font-size: 0.84rem; }
+#tc-chunks { letter-spacing: 0.5px; font-weight: 600; }
+#tc-parts { color: var(--text-main); }
+.tc-hook {
+    background: var(--accent-bg);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin: 8px 0;
+    font-size: 0.82rem;
+}
+
+/* Note Editor Popover */
+#note-editor {
+    display: none;
+    position: absolute;
+    z-index: 1600;
+    width: min(330px, calc(100vw - 20px));
+    background: var(--bg-card);
+    border: 1px solid var(--border-dark);
+    border-radius: 10px;
+    box-shadow: 0 14px 34px rgba(0,0,0,0.35);
+    padding: 12px;
+}
+#note-editor textarea {
+    width: 100%;
+    min-height: 92px;
+    resize: vertical;
+    background: var(--bg-page);
+    color: var(--text-main);
+    border: 1px solid var(--border-dark);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    font-family: inherit;
+    outline: none;
+}
+#note-editor textarea:focus {
+    border-color: var(--primary-light);
+}
+.note-editor-btns {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    justify-content: flex-end;
+}
+
+/* Sidebar Data Footer (export/import) */
+.sidebar-footer {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #334155;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.sidebar-footer-title {
+    font-size: 0.76rem;
+    color: #94a3b8;
+    margin-bottom: 2px;
+}
+.data-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+.data-btn:hover {
+    background: #334155;
+    color: #38bdf8;
+}
+
+/* Single-Color Academic Highlighter */
+.user-hl {
+    background-color: #fef08a !important;
+    color: #854d0e !important;
+    border-radius: 3px;
+    padding: 1px 3px;
+    cursor: pointer;
+    transition: filter 0.2s ease;
+    font-weight: 600;
+}
+.user-hl:hover { filter: brightness(0.92); }
+[data-theme="dark"] .user-hl {
+    background-color: #a16207 !important;
+    color: #fef08a !important;
+}
+
+/* Toast Notification */
+#toast-msg {
+    display: none;
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f172a;
+    color: #38bdf8;
+    border: 1px solid #38bdf8;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    z-index: 3000;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}

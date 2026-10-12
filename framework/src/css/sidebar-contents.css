@@ -1,0 +1,110 @@
+/* Mobile Backdrop */
+#sidebar-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 999;
+    backdrop-filter: blur(2px);
+}
+
+.sidebar-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #334155;
+}
+
+.sidebar-header h2 {
+    font-size: 1.15rem;
+    color: #60a5fa;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.theme-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+}
+
+.theme-btn:hover {
+    background: #334155;
+    color: #38bdf8;
+}
+
+.sidebar-meta {
+    font-size: 0.76rem;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+/* Search Input */
+.search-box {
+    margin-bottom: 18px;
+    position: relative;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 8px 12px;
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    color: #f1f5f9;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.search-box input:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+#sidebar nav {
+    flex: 1;
+}
+
+#sidebar nav ul {
+    list-style: none;
+}
+
+#sidebar nav ul li {
+    margin-bottom: 5px;
+}
+
+#sidebar nav ul li a {
+    color: #cbd5e1;
+    text-decoration: none;
+    font-size: 0.86rem;
+    display: block;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+#sidebar nav ul li a:hover, #sidebar nav ul li a.active {
+    background-color: var(--sidebar-hover);
+    color: #38bdf8;
+    transform: translateX(3px);
+}
+
+#sidebar nav ul li.sub {
+    padding-left: 14px;
+    font-size: 0.8rem;
+}
+
+#sidebar nav ul li.sub a {
+    color: #94a3b8;
+}

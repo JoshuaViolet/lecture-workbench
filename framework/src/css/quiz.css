@@ -1,0 +1,47 @@
+/* Quiz Toggle Button */
+.quiz-toggle {
+    background-color: var(--primary-bg);
+    color: var(--primary);
+    border: 1px solid var(--primary-light);
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.quiz-toggle:hover {
+    background-color: var(--primary);
+    color: #ffffff;
+}
+
+.quiz-a {
+    display: none;
+    margin-top: 14px;
+    padding: 14px;
+    background-color: var(--success-bg);
+    border-left: 4px solid var(--success);
+    border-radius: 6px;
+    color: #065f46;
+    font-size: 0.92rem;
+}
+
+.quiz-card {
+    background: var(--bg-page);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.quiz-q {
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 14px;
+}
+
+/* Dark-mode legibility for graded/answer states */
+[data-theme="dark"] .quiz-a { color: #a7f3d0; }
+[data-theme="dark"] .mcq-opt.correct { color: #a7f3d0 !important; }
+[data-theme="dark"] .mcq-opt.incorrect { color: #fecaca !important; }

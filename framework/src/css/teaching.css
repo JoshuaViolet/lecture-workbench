@@ -1,0 +1,65 @@
+/* ===== Teaching components: opt-in, no runtime dependencies ===== */
+.teaching-block, .chapter-spine, .study-card {
+    margin: 1.25rem 0;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--border-dark);
+    border-radius: 10px;
+    background: var(--bg-card);
+    color: var(--text-main);
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.teaching-block { border-inline-start: 4px solid var(--teaching-accent, var(--primary)); }
+.phenomenon-block { --teaching-accent: var(--primary); }
+.evidence-block { --teaching-accent: var(--success); }
+.limitation-block { --teaching-accent: var(--accent); }
+.misconception-block { --teaching-accent: var(--danger); }
+.transfer-block { --teaching-accent: var(--primary-light); }
+.teaching-block .block-label, .study-card .study-label {
+    display: block;
+    font-size: .85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: .3rem;
+}
+.teaching-block > :last-child, .study-card > :last-child { margin-bottom: 0; }
+.teaching-block :is(h3, h4), .study-card > header :is(h3, h4) {
+    margin: 0 0 .65rem;
+    color: var(--text-main);
+}
+.teaching-block :is(ul, ol) { padding-inline-start: 1.4rem; }
+.chapter-spine, .study-card .study-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.5rem;
+}
+.chapter-spine > div, .study-card .study-grid > div { min-width: 0; }
+.chapter-spine dt, .study-card dt { font-weight: 700; margin-bottom: .25rem; }
+.chapter-spine dd, .study-card dd { margin: 0; }
+.study-card .study-grid { margin: .8rem 0 0; }
+.study-card .study-source {
+    margin-top: 1rem;
+    padding-top: .75rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: .9rem;
+}
+@media (max-width: 600px) {
+    .chapter-spine, .study-card .study-grid { grid-template-columns: minmax(0, 1fr); }
+    .teaching-block, .chapter-spine, .study-card { padding: 1rem; }
+}
+@media print {
+    .teaching-block, .chapter-spine, .study-card {
+        background: white;
+        box-shadow: none;
+        border-color: #999;
+        break-inside: avoid;
+        overflow: visible;
+    }
+    .chapter-spine, .study-card .study-grid { display: block; }
+    .chapter-spine > div, .study-card .study-grid > div { margin-bottom: .6rem; }
+    .teaching-block :is(h3, h4), .study-card > header { break-after: avoid; }
+    /* Authors can opt long cards into natural pagination. */
+    .teaching-block.allow-page-break, .chapter-spine.allow-page-break,
+    .study-card.allow-page-break { break-inside: auto; }
+}
