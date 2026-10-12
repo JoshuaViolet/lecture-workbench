@@ -4,7 +4,7 @@
 
 [在线示例](https://joshuaviolet.github.io/lecture-workbench/) · [架构说明（英文）](docs/architecture.md) · [English README](README.md)
 
-> 状态：**v0.1，早期版本**。最初是我为自己的大学课程写的工具，现在整理成可复用的框架。页面界面支持简体中文（默认）和英文。未解决的问题见 [KNOWN_ISSUES.md](KNOWN_ISSUES.md)。
+> 状态：**v0.2，早期版本**。最初是我为自己的大学课程写的工具，现在整理成可复用的框架。页面界面支持简体中文（默认）和英文。未解决的问题见 [KNOWN_ISSUES.md](KNOWN_ISSUES.md)。
 
 ## 功能
 
