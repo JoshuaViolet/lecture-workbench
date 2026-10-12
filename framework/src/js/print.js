@@ -3,12 +3,12 @@
 // ==========================================
 function buildPrintSheet() {
     document.querySelectorAll("#print-sheet").forEach(el => el.remove());
-    let html = '<h2>附录：自测清单（打印专用）</h2>';
-    html += '<h3>抽认卡 Q→A（共 ' + flashcards.length + ' 张）</h3><ol>';
+    let html = '<h2>' + escapeHtml(UI.print_title) + '</h2>';
+    html += '<h3>' + escapeHtml(t("print_flashcards", { n: flashcards.length })) + '</h3><ol>';
     flashcards.forEach(c => {
         html += '<li style="margin-bottom:8px;"><strong>Q:</strong> ' + escapeHtml(c.front) + '<br><strong>A:</strong> ' + escapeHtml(c.back) + '</li>';
     });
-    html += '</ol><h3>MCQ 答案速查（共 ' + mcqData.length + ' 题）</h3><ol>';
+    html += '</ol><h3>' + escapeHtml(t("print_mcq", { n: mcqData.length })) + '</h3><ol>';
     mcqData.forEach(m => {
         // options are shuffled on screen, so print the answer text rather than a letter
         html += '<li style="margin-bottom:8px;">' + escapeHtml(m.q) + '<br><strong>✓</strong> ' + escapeHtml(m.opts[m.ans]) + '<br><span style="color:#444;">' + m.exp + '</span></li>';

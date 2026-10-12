@@ -6,10 +6,10 @@ function updateFC() {
     const typeEl = document.getElementById("fc-type");
     if (!typeEl) return;
     const card = flashcards[curFC];
-    const fcTag = fcFlipped ? "MECHANISM & ANSWER" : "CONCEPT PROMPT";
-    document.getElementById("fc-type").textContent = (card.type ? card.type + " · " : "") + fcTag + " (点击翻转)";
+    const fcTag = fcFlipped ? UI.fc_tag_back : UI.fc_tag_front;
+    document.getElementById("fc-type").textContent = (card.type ? card.type + " · " : "") + fcTag + UI.fc_flip_hint;
     document.getElementById("fc-front").textContent = fcFlipped ? card.back : card.front;
-    document.getElementById("fc-sub").textContent = fcFlipped ? "点击返回概念名称 ↺" : "点击翻面查看机制与考点 ➔";
+    document.getElementById("fc-sub").textContent = fcFlipped ? UI.fc_sub_back : UI.fc_sub_front;
     document.getElementById("fc-counter").textContent = (curFC + 1) + " / " + flashcards.length;
 }
 

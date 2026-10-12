@@ -6,7 +6,7 @@ Fixed issues are recorded in [CHANGELOG.md](CHANGELOG.md). This file lists what 
 
 1. **An annotation stays inside one block.** A selection that runs from one paragraph into the next keeps only the part in the first paragraph (the page says so). Supporting multi-block annotations means storing a start and end block and wrapping across them.
 2. **Restoring is O(blocks × annotations) when offsets are stale.** Fine for a lecture with hundreds of annotations; a very long page with thousands could be slow on first load after an edit.
-3. **The UI is Simplified Chinese only.** Strings are hard-coded in `framework/template.html` and the modules under `framework/src/`; there is no i18n layer yet.
+3. **The UI comes in Simplified Chinese and English only.** Another language needs a table in `framework/ui_strings.json` with the same keys. Dates in the Markdown export follow the browser's locale, not the guide's language.
 4. **The validator needs Node.js** for `node --check` and the term-card audit. Building does not.
 
 ## Structure
@@ -18,5 +18,4 @@ Fixed issues are recorded in [CHANGELOG.md](CHANGELOG.md). This file lists what 
 | Next | Goal |
 |---|---|
 | 0.2 | CLI; `new` command that scaffolds a subject |
-| 0.3 | UI string table with English and Chinese |
 | later | Optional, pluggable study assistant (OpenAI-compatible endpoint or a local model), off by default so the offline core stays dependency-free |

@@ -75,7 +75,7 @@ function scheduleHideTermCard() {
 
 function speakCurrentTerm() {
     if (!currentTermEntry) return;
-    if (!("speechSynthesis" in window)) { showToast("⚠️ 当前浏览器不支持语音朗读"); return; }
+    if (!("speechSynthesis" in window)) { showToast(UI.toast_no_speech); return; }
     window.speechSynthesis.cancel();
     const sayText = currentTermEntry.term.split("(")[0].replace(/\//g, " ").trim();
     const u = new SpeechSynthesisUtterance(sayText);

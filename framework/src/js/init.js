@@ -15,7 +15,7 @@
         const pillText = document.getElementById("sidebar-pill-text");
         if (pillIcon && pillText) {
             pillIcon.textContent = "☰";
-            pillText.textContent = "目录";
+            pillText.textContent = UI.sidebar_short;
         }
     }
 })();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="light">
+<html lang="{{UI:html_lang}}" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -40,18 +40,18 @@
 
     <!-- Selection Highlighter Toolbar -->
     <div id="text-selection-toolbar">
-        <button class="hl-action-btn" id="add-hl-btn" onclick="applyHighlight()" title="添加黄色荧光高亮">🖍️ 荧光高亮</button>
-        <button class="hl-action-btn" id="add-note-btn" onclick="openNoteEditor()" title="为划选文本添加我的文字批注">📝 批注</button>
-        <button class="hl-action-btn" id="remove-hl-btn" onclick="removeHighlightAtSelection()" style="display:none; color: #f87171;" title="清除高亮">🗑️ 清除高亮</button>
+        <button class="hl-action-btn" id="add-hl-btn" onclick="applyHighlight()" title="{{UI:hl_add_title}}">{{UI:hl_add}}</button>
+        <button class="hl-action-btn" id="add-note-btn" onclick="openNoteEditor()" title="{{UI:note_add_title}}">{{UI:note_add}}</button>
+        <button class="hl-action-btn" id="remove-hl-btn" onclick="removeHighlightAtSelection()" style="display:none; color: #f87171;" title="{{UI:hl_remove_title}}">{{UI:hl_remove}}</button>
     </div>
 
     <!-- Note Editor Popover -->
     <div id="note-editor">
-        <textarea id="note-editor-text" placeholder="写下你的理解、疑问或记忆钩子…（批注仅保存在本机浏览器，请定期从左侧目录底部导出备份）"></textarea>
+        <textarea id="note-editor-text" placeholder="{{UI:note_placeholder}}"></textarea>
         <div class="note-editor-btns">
-            <button class="hl-action-btn" id="note-delete-btn" onclick="deleteNote()" style="display:none; color: #f87171;">🗑️ 删除</button>
-            <button class="hl-action-btn" onclick="closeNoteEditor()">取消</button>
-            <button class="hl-action-btn" onclick="saveNote()" style="color: #4ade80;">💾 保存批注</button>
+            <button class="hl-action-btn" id="note-delete-btn" onclick="deleteNote()" style="display:none; color: #f87171;">{{UI:note_delete}}</button>
+            <button class="hl-action-btn" onclick="closeNoteEditor()">{{UI:note_cancel}}</button>
+            <button class="hl-action-btn" onclick="saveNote()" style="color: #4ade80;">{{UI:note_save}}</button>
         </div>
     </div>
 
@@ -59,11 +59,11 @@
     <div id="term-card">
         <div class="tc-head">
             <span id="tc-term"></span>
-            <button id="tc-speak" title="英文朗读 (本机语音合成)">🔊 朗读</button>
+            <button id="tc-speak" title="{{UI:term_speak_title}}">{{UI:term_speak}}</button>
         </div>
         <div class="tc-row"><span class="tc-label">IPA</span><span id="tc-ipa"></span></div>
-        <div class="tc-row"><span class="tc-label">拼读</span><span id="tc-chunks"></span></div>
-        <div class="tc-row"><span class="tc-label">词源</span><span id="tc-parts"></span></div>
+        <div class="tc-row"><span class="tc-label">{{UI:term_chunks}}</span><span id="tc-chunks"></span></div>
+        <div class="tc-row"><span class="tc-label">{{UI:term_parts}}</span><span id="tc-parts"></span></div>
         <div class="tc-hook" id="tc-hook"></div>
     </div>
 
@@ -71,8 +71,8 @@
     <div id="progress-bar"></div>
 
     <!-- Universal Floating Sidebar Toggle Button -->
-    <button id="sidebar-toggle-pill" onclick="toggleSidebar()" title="展开/收起目录 (快捷键 [ )">
-        <span id="sidebar-pill-icon">◀</span> <span id="sidebar-pill-text">收起目录</span>
+    <button id="sidebar-toggle-pill" onclick="toggleSidebar()" title="{{UI:sidebar_toggle_title}}">
+        <span id="sidebar-pill-icon">◀</span> <span id="sidebar-pill-text">{{UI:sidebar_collapse}}</span>
     </button>
 
     <!-- Mobile Backdrop -->
@@ -84,8 +84,8 @@
             <h2>
                 <span>{{SIDEBAR_TITLE}}</span>
                 <div style="display: flex; gap: 6px; align-items: center;">
-                    <button class="theme-btn" onclick="toggleTheme()" id="theme-toggle-btn">🌙 暗色</button>
-                    <button class="sidebar-collapse-btn" onclick="toggleSidebar(false)" title="收起目录 (快捷键 [ )">◀</button>
+                    <button class="theme-btn" onclick="toggleTheme()" id="theme-toggle-btn">{{UI:theme_dark}}</button>
+                    <button class="sidebar-collapse-btn" onclick="toggleSidebar(false)" title="{{UI:sidebar_collapse_title}}">◀</button>
                 </div>
             </h2>
             <div class="sidebar-meta">{{SIDEBAR_META}}</div>
@@ -102,10 +102,10 @@
         </nav>
 
         <div class="sidebar-footer">
-            <div class="sidebar-footer-title">💾 学习数据（批注 <span id="note-count">0</span> 条）</div>
-            <button class="data-btn" onclick="exportStudyData()" title="将全部高亮与批注下载为 JSON 备份文件">📤 导出高亮 + 批注 (JSON)</button>
-            <button class="data-btn" onclick="document.getElementById('import-file-input').click()" title="从 JSON 备份文件恢复高亮与批注">📥 导入数据备份</button>
-            <button class="data-btn" onclick="copyNotesAsMarkdown()" title="复制为 Markdown，可粘贴到你的笔记">📋 复制批注为 Markdown</button>
+            <div class="sidebar-footer-title">{{UI:data_title_before}}<span id="note-count">0</span>{{UI:data_title_after}}</div>
+            <button class="data-btn" onclick="exportStudyData()" title="{{UI:export_title}}">{{UI:export}}</button>
+            <button class="data-btn" onclick="document.getElementById('import-file-input').click()" title="{{UI:import_title}}">{{UI:import}}</button>
+            <button class="data-btn" onclick="copyNotesAsMarkdown()" title="{{UI:copy_md_title}}">{{UI:copy_md}}</button>
             <input type="file" id="import-file-input" accept=".json,application/json" style="display:none" onchange="importStudyData(this.files[0]); this.value='';">
         </div>
     </aside>
@@ -121,8 +121,8 @@
 
     <!-- Lightbox Modal -->
     <div id="lightbox-modal" onclick="closeLightbox(event)">
-        <span class="lightbox-close" onclick="closeLightbox(event)" role="button" tabindex="0" aria-label="关闭大图">&times;</span>
-        <img id="lightbox-img" src="" alt="Enlarged Slide">
+        <span class="lightbox-close" onclick="closeLightbox(event)" role="button" tabindex="0" aria-label="{{UI:lightbox_close}}">&times;</span>
+        <img id="lightbox-img" src="" alt="{{UI:lightbox_alt}}">
         <div id="lightbox-caption"></div>
     </div>
 
@@ -135,6 +135,12 @@
         const DOC_ID = {{DOC_ID_JSON}};
         const APP_ID = {{APP_ID_JSON}};
         const GUIDE_TITLE = {{GUIDE_TITLE_JSON}};
+        // Interface strings in the guide's language (config "lang"), from framework/ui_strings.json.
+        // t("key", { n: 3 }) fills {n}-style slots. Static HTML gets its strings at build time.
+        const UI = {{UI_STRINGS_JSON}};
+        function t(key, vars) {
+            return UI[key].replace(/\{(\w+)\}/g, (m, k) => (vars && k in vars ? String(vars[k]) : m));
+        }
         const LS = {
             theme: DOC_ID + "_theme",
             sidebar: DOC_ID + "_sidebar_collapsed",

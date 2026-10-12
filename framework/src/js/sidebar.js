@@ -15,7 +15,7 @@ function toggleSidebar(forceState) {
         const isOpen = body.classList.contains("sidebar-open");
         if (pillIcon && pillText) {
             pillIcon.textContent = isOpen ? "◀" : "☰";
-            pillText.textContent = isOpen ? "收起目录" : "目录";
+            pillText.textContent = isOpen ? UI.sidebar_collapse : UI.sidebar_short;
         }
     } else {
         let isCollapsed;
@@ -33,7 +33,7 @@ function toggleSidebar(forceState) {
         lsSet(LS.sidebar, isCollapsed ? "true" : "false");
         if (pillIcon && pillText) {
             pillIcon.textContent = isCollapsed ? "☰" : "◀";
-            pillText.textContent = isCollapsed ? "展开目录" : "收起目录";
+            pillText.textContent = isCollapsed ? UI.sidebar_expand : UI.sidebar_collapse;
         }
     }
 }
@@ -61,6 +61,6 @@ if (window.innerWidth > 900 && lsGet(LS.sidebar) === "true") {
     const pillText = document.getElementById("sidebar-pill-text");
     if (pillIcon && pillText) {
         pillIcon.textContent = "☰";
-        pillText.textContent = "展开目录";
+        pillText.textContent = UI.sidebar_expand;
     }
 }
