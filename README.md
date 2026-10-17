@@ -15,7 +15,7 @@ Turn lecture notes into a **single, self-contained HTML study guide** that works
 
 - **Highlights and margin notes** that survive reloads, even when the selection crosses bold text or other inline markup. Stored per guide in `localStorage`; export/import as JSON, or copy as Markdown.
 - **Term cards** on hover: IPA, stressed syllables, etymology, a memory hook, and pronunciation through the Web Speech API.
-- **Flashcards** and **multiple-choice questions** with explanations. Options are shuffled on every render so the position of the answer can't be learned instead of the content.
+- **Flashcards** and **multiple-choice questions** with explanations. Options are shuffled on every render so the position of the answer can't be learned instead of the content. A question can carry a code block, shown exactly as written.
 - **Teaching components** for structuring a lesson: chapter spine, evidence / limitation / misconception / transfer blocks, study cards.
 - **Print mode** that forces a light theme and appends a self-test sheet with the answer key.
 - Dark mode, collapsible sidebar, reading progress, keyboard support, `prefers-reduced-motion`.
@@ -91,13 +91,15 @@ subjects/my-lecture/
 }
 ```
 
-`ans` is the 0-based index of the correct option in `opts`. Add `"shuffle": false` to a question whose options must stay in order. A term in `content.html` gets a hover card when it is written as
+`ans` is the 0-based index of the correct option in `opts`. Add `"shuffle": false` to a question whose options must stay in order. A question about code puts the code in an optional `"code"` field, shown under the stem in a monospace block with its line breaks and indentation kept; an option that contains a line break (`\n`) is shown as code too. A term in `content.html` gets a hover card when it is written as
 
 ```html
 <span class="term"><span class="en">Binary search</span> <span class="zh">(二分查找)</span></span>
 ```
 
 or as `<strong>…</strong>` text that matches one of the `keys`. Copy-paste snippets for the teaching components are in [examples/](examples/).
+
+How to write the lesson and the questions (block order, question types, what to leave out) is in [AGENTS.md](AGENTS.md), with supplements for [psychology](docs/writing/psychology.md), [economics](docs/writing/economics.md) and [data science / programming](docs/writing/data-science.md). It is written so that you can hand it to an AI assistant that drafts a subject for you.
 
 Coming from the older `data.js` format: `python3 framework/migrate_datajs.py subjects/<name>`.
 
@@ -109,7 +111,7 @@ Coming from the older `data.js` format: `python3 framework/migrate_datajs.py sub
 |---|---|
 | structure | broken `#anchors`, `getElementById` targets that don't exist, undefined inline handlers, unbalanced tags, unfilled placeholders, script syntax errors |
 | content | raw LaTeX (there is no math renderer), missing images, English terms with no term card |
-| teaching-quality lint | the correct option being the longest one in most questions, answers clustered on one letter, duplicate questions |
+| teaching-quality lint | the correct option being the only longest one in more than 40% of questions, question-type tags in stems (`Mechanism: …`), explanations that name options by letter although options are shuffled, answers clustered on one letter in fixed-order questions, duplicate questions |
 
 Lint findings are warnings; `--strict` turns them into failures.
 

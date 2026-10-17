@@ -11,8 +11,10 @@ Checks (any failure exits 1):
   content     no raw LaTeX (the page has no math renderer), every assets/ image exists,
               every English term in span.en / <strong> has a term card (or is allow-listed)
 Teaching-quality lint (warnings; failures with --strict):
-              the correct option is the longest one too often, answer positions cluster in
-              questions that opt out of shuffling, duplicate question stems
+              the correct option is the longest one in more than 40% of questions, question-type
+              tags in stems, explanations that name options by letter although options are
+              shuffled, answer positions cluster in questions that opt out of shuffling,
+              duplicate question stems
 """
 import json
 import os
@@ -27,6 +29,25 @@ VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "met
 # ids the engine creates at runtime, or looks up only if the subject includes that widget
 RUNTIME_IDS = ("print-sheet", "flashcard-element", "fc-type", "fc-front", "fc-sub", "fc-counter")
 RUNTIME_ID_PREFIXES = ("mcq-",)
+
+# Picking the longest option scores about 25% on four options by chance; above this share of
+# questions, students can score by length without reading the stem.
+MCQ_LONGEST_LIMIT = 0.4
+_TYPE_EN = (r"Recall|Definition|Discrimination|Mechanism|Evidence|Limitation|Transfer|Application"
+            r"|Calculation|Derivation|Graph|Policy|Prediction|Predict output|Debug|Rewrite")
+_TYPE_ZH = r"基础|定义|辨析|机制|证据|限制|迁移|应用|读图|推导|计算|代码|政策|局限|预测输出|找错|改写"
+# a question-type label in a stem ("Mechanism: …", "[Transfer] …", "T01-Q01｜辨析｜…") hints at the answer
+TYPE_TAG_RE = re.compile(
+    r"自编\s*[·・]"
+    r"|[｜|]\s*(?:" + _TYPE_ZH + r")[^｜|]{0,6}[｜|]"
+    r"|^\s*(?:[\w-]+\s*[｜|:：]\s*)?[\[【(（]?\s*(?:(?i:" + _TYPE_EN + r")|" + _TYPE_ZH + r")\s*[\]】)）:：]")
+# "option B", "(C)", "B is wrong", "选项 B", "A 项错" no longer match what the student saw once options are shuffled
+LETTER_REF_RE = re.compile(
+    r"(?i:\b(?:option|choice|answer)s?\s+(?:is\s+)?)\(?[A-E]\b"
+    r"|(?<![A-Za-z])[（(][A-E][)）]"
+    r"|\b[A-E]\s+(?:is|was)\s+(?:(?:not\s+)?(?:wrong|right|correct|incorrect)|the answer)\b"
+    r"|选项\s*[A-E](?![A-Za-z])"
+    r"|(?<![A-Za-z])[A-E]\s*(?:项|错|对|是正确|不对)")
 
 
 def run_node(js_source, *args):
@@ -67,15 +88,25 @@ class TagBalance(HTMLParser):
 
 
 def lint_mcq(mcq):
-    """Return warnings about answer patterns students can exploit without knowing the material."""
+    """Return warnings about patterns students can exploit without knowing the material."""
     warnings = []
     n = len(mcq)
     if n >= 4:
         longest = sum(1 for m in mcq
                       if len(m["opts"][m["ans"]]) > max(len(o) for i, o in enumerate(m["opts"]) if i != m["ans"]))
-        if longest / n > 0.5:
-            warnings.append(f"the correct option is the strictly longest one in {longest}/{n} questions; "
-                            "students can guess by length (make distractors as specific as the answer)")
+        if longest / n > MCQ_LONGEST_LIMIT:
+            warnings.append(f"the correct option is the strictly longest one in {longest}/{n} questions "
+                            f"(limit {MCQ_LONGEST_LIMIT:.0%}); students can guess by length "
+                            "(make distractors as specific as the answer, or trim the answer)")
+    tagged = [i for i, m in enumerate(mcq) if TYPE_TAG_RE.search(m["q"])]
+    if tagged:
+        warnings.append(f"{len(tagged)} question stem(s) carry a question-type tag, which hints at the answer; "
+                        "keep types out of the stem: " + question_list(tagged, mcq))
+    lettered = [i for i, m in enumerate(mcq)
+                if m.get("shuffle") is not False and LETTER_REF_RE.search(re.sub(r"<[^>]+>", "", m["exp"]))]
+    if lettered:
+        warnings.append(f"{len(lettered)} explanation(s) refer to options by letter, but options are shuffled; "
+                        "name the option by its content: " + question_list(lettered))
     fixed = [m for m in mcq if m.get("shuffle") is False]
     if len(fixed) >= 4:
         counts = {}
@@ -91,6 +122,12 @@ def lint_mcq(mcq):
     if dupes:
         warnings.append(f"{len(dupes)} duplicate question stem(s), e.g. {sorted(dupes)[0][:40]!r}")
     return warnings
+
+
+def question_list(indexes, mcq=None, limit=6):
+    """'Q2, Q5' (1-based), with the start of each stem when mcq is given."""
+    parts = [f"Q{i + 1}" + (f" {mcq[i]['q'].strip()[:24]!r}" if mcq else "") for i in indexes[:limit]]
+    return ", ".join(parts) + (", …" if len(indexes) > limit else "")
 
 
 def main(argv):

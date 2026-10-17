@@ -61,7 +61,7 @@ CONFIG_FIELDS = {
 SCHEMA = {
     "flashcards": {"front": (str, True), "back": (str, True), "type": (str, False)},
     "mcqData": {"q": (str, True), "opts": (list, True), "ans": (int, True), "exp": (str, True),
-                "shuffle": (bool, False)},
+                "code": (str, False), "shuffle": (bool, False)},
     "termLexicon": {"keys": (list, True), "term": (str, True), "ipa": (str, False),
                     "chunks": (str, False), "parts": (str, False), "hook": (str, False)},
 }

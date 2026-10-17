@@ -137,7 +137,7 @@ def test_highlight_and_note_on_overlapping_text_both_restore(page):
 def test_unreadable_storage_does_not_break_the_page(page):
     page.evaluate("localStorage.setItem(LS.highlights, '{not json'); localStorage.setItem(LS.notes, '[1,')")
     page.reload()
-    assert page.locator(".mcq-card").count() == 6
+    assert page.locator(".mcq-card").count() == 7
     assert page.locator("#main-content .lexi").count() == 7
     assert page.page_errors == []
     # the unreadable value is kept aside instead of being overwritten by the next save
