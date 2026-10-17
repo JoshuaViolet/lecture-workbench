@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1
 
 ### Added
 - Optional `code` field for multiple-choice questions: a monospace block under the stem, shown exactly as written. Options with a line break are shown as code. The print sheet includes the code.
