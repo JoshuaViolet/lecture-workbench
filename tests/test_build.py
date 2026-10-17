@@ -79,6 +79,8 @@ def test_include_problems_are_all_reported(tmp_path):
     ({"mcqData": [{"q": "q", "opts": ["a", "b"], "ans": 2, "exp": "e"}]}, "mcqData[0].ans 2 is out of range"),
     ({"mcqData": [{"q": "q", "opts": ["a", "b"], "answer": 0, "exp": "e"}]}, "mcqData[0].answer is not a known field"),
     ({"mcqData": [{"q": "q", "opts": ["a"], "ans": 0, "exp": "e"}]}, "at least 2"),
+    ({"mcqData": [{"q": "q", "opts": ["a", "b"], "ans": 0, "exp": "e", "code": ["x = 1"]}]},
+     "mcqData[0].code must be str"),
     ({"flashcards": [{"front": "f"}]}, "flashcards[0].back is missing"),
     ({"termLexicon": [{"keys": [], "term": "t"}]}, "keys must be a non-empty list"),
     ({"psycDict": []}, "data.psycDict is not a known array"),

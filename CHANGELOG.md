@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Optional `code` field for multiple-choice questions: a monospace block under the stem, shown exactly as written. Options with a line break are shown as code. The print sheet includes the code.
+- Writing rules for subject authors and AI assistants: [AGENTS.md](AGENTS.md), with supplements for psychology, economics and data science under `docs/writing/`.
+- Validator warnings for question-type tags in stems and for explanations that refer to shuffled options by letter.
+
+### Changed
+- The validator now warns when the correct option is the only longest one in more than 40% of questions (was 50%). Picking the longest option scores about 25% by chance with four options.
+- The demo has a predict-the-output question that uses `code`, and one answer was shortened so the demo stays under the new limit.
+
 ## 0.2.0
 
 ### Added

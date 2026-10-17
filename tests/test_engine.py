@@ -19,7 +19,7 @@ def test_page_makes_no_network_requests(browser, demo_guide):
 
 
 def test_init_raises_no_errors(page):
-    assert page.locator(".mcq-card").count() == 6
+    assert page.locator(".mcq-card").count() == 7
     assert page.locator("#fc-counter").inner_text() == "1 / 6"
     assert page.locator("#main-content .lexi").count() == 7
     assert page.page_errors == []
@@ -65,3 +65,22 @@ def test_print_sheet_lists_answer_text(page):
     first = page.evaluate("mcqData[0].opts[mcqData[0].ans]")
     assert first in sheet
     assert "e<b>" in sheet and "undefined" not in sheet
+
+
+def test_code_field_and_multiline_options_keep_their_layout(page):
+    page.evaluate("mcqData.length = 1;"
+                  "mcqData[0] = {q: 'What prints?', code: 'for i in range(2):\\n    print(i <b>)',"
+                  " opts: ['0\\n1', '1\\n2', 'one line'], ans: 0, exp: 'x'}; resetMCQ()")
+    card = page.locator(".mcq-card").first
+    assert card.locator("pre.mcq-code code").inner_text() == "for i in range(2):\n    print(i <b>)"
+    assert card.locator(".mcq-code").evaluate("el => getComputedStyle(el).whiteSpace") == "pre"
+    multi = card.locator('.mcq-opt[data-opt="0"]')
+    assert "is-code" in multi.get_attribute("class") and multi.inner_text() == "0\n1"
+    assert "is-code" not in card.locator('.mcq-opt[data-opt="2"]').get_attribute("class")
+    page.evaluate("buildPrintSheet()")
+    assert "print(i <b>)" in page.locator("#print-sheet .mcq-code").inner_text()
+
+
+def test_demo_questions_without_code_have_no_code_block(page):
+    without = page.evaluate("mcqData.filter(m => !m.code).length")
+    assert page.locator(".mcq-card:not(:has(.mcq-code))").count() == without

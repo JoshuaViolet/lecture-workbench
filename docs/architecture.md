@@ -41,7 +41,7 @@ The engine is plain DOM code run once at the end of `<body>`:
 |---|---|
 | storage | `lsGet` / `lsSet` / `readList` / `writeList`. Every `localStorage` access is guarded; all keys derive from `DOC_ID`, so many guides can share an origin |
 | annotations | highlights and margin notes (below) |
-| practice | flashcards, MCQ with per-render option shuffling, collapsible inline checks |
+| practice | flashcards, MCQ with per-render option shuffling and an optional code block, collapsible inline checks |
 | term cards | builds an index from `termLexicon` keys and attaches hover cards to `span.en` and `<strong>` text that matches |
 | layout | sidebar collapse, dark mode, progress bar, lightbox |
 | print | `beforeprint` builds a self-test appendix and forces lazy images to load |

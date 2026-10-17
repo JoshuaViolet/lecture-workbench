@@ -28,13 +28,24 @@ function initMCQ() {
         qTitle.textContent = item.q;
         card.appendChild(qTitle);
 
+        // optional code the question is about, shown as written (whitespace kept)
+        if (item.code) {
+            const pre = document.createElement("pre");
+            pre.className = "mcq-code";
+            const code = document.createElement("code");
+            code.textContent = item.code;
+            pre.appendChild(code);
+            card.appendChild(pre);
+        }
+
         const optsDiv = document.createElement("div");
         optsDiv.className = "mcq-options";
 
         optionOrder(item).forEach(oIdx => {
+            const opt = item.opts[oIdx];
             const optBtn = document.createElement("button");
-            optBtn.className = "mcq-opt";
-            optBtn.textContent = item.opts[oIdx];
+            optBtn.className = "mcq-opt" + (opt.includes("\n") ? " is-code" : "");   // a multi-line option is code
+            optBtn.textContent = opt;
             optBtn.dataset.opt = oIdx;   // index in the authored order
             optBtn.onclick = () => selectOption(qIdx, oIdx, optBtn);
             optsDiv.appendChild(optBtn);

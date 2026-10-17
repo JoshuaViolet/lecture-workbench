@@ -11,7 +11,9 @@ function buildPrintSheet() {
     html += '</ol><h3>' + escapeHtml(t("print_mcq", { n: mcqData.length })) + '</h3><ol>';
     mcqData.forEach(m => {
         // options are shuffled on screen, so print the answer text rather than a letter
-        html += '<li style="margin-bottom:8px;">' + escapeHtml(m.q) + '<br><strong>✓</strong> ' + escapeHtml(m.opts[m.ans]) + '<br><span style="color:#444;">' + m.exp + '</span></li>';
+        const code = m.code ? '<pre class="mcq-code"><code>' + escapeHtml(m.code) + '</code></pre>' : '<br>';
+        html += '<li style="margin-bottom:8px;"><span style="white-space:pre-wrap;">' + escapeHtml(m.q) + '</span>' + code
+            + '<strong>✓</strong> <span style="white-space:pre-wrap;">' + escapeHtml(m.opts[m.ans]) + '</span><br><span style="color:#444;">' + m.exp + '</span></li>';
     });
     html += '</ol>';
     const sheet = document.createElement("div");
