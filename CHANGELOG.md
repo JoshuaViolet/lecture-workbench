@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.2
 
 ### Added
 - A question can show the diagram it is about: `"fig"` (an image in the subject's `assets/` folder) and `"fig_alt"` in `mcqData`. The build embeds the image; it appears under the stem, opens full size (also from the keyboard) and is printed with the answer key. A missing image, or a figure without `fig_alt`, fails the build.
