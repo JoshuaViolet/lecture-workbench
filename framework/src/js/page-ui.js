@@ -95,8 +95,9 @@ function updateActiveNav() {
         if (nt.target.getBoundingClientRect().top <= line) current = nt.link;
         else break;
     }
-    // at the very bottom, the last section is the one being read even if it is short
-    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+    // at the very bottom of a long page, the last section is the one being read even if it is short
+    const docHeight = document.documentElement.scrollHeight;
+    if (docHeight > window.innerHeight + 2 && window.innerHeight + window.scrollY >= docHeight - 2) {
         current = navTargets[navTargets.length - 1].link;
     }
     navTargets.forEach(nt => {

@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{TITLE}}</title>
     <script>
-        // Set the theme before anything is drawn: the reader's saved choice, else the system's.
-        // (The main script runs at the end of <body>, too late to avoid a white flash.)
+        // Set the theme before anything is drawn: the reader's saved choice (the key is LS.theme
+        // below), else the system's. The main script runs at the end of <body>, too late to avoid
+        // a white flash.
         (function () {
             var theme = null;
             try { theme = localStorage.getItem({{DOC_ID_JSON}} + "_theme"); } catch (e) { /* storage blocked */ }
