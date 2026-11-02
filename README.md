@@ -97,7 +97,7 @@ Save the files as UTF-8 (with or without a byte-order mark). A file in another e
 }
 ```
 
-`ans` is the 0-based index of the correct option in `opts`. Add `"shuffle": false` to a question whose options must stay in order. A question about code puts the code in an optional `"code"` field, shown under the stem in a monospace block with its line breaks and indentation kept; an option that contains a line break (`\n`) is shown as code too. A term in `content.html` gets a hover card when it is written as
+`ans` is the 0-based index of the correct option in `opts`. Add `"shuffle": false` to a question whose options must stay in order. A question about code puts the code in an optional `"code"` field, shown under the stem in a monospace block with its line breaks and indentation kept; an option that contains a line break (`\n`) is shown as code too. A question about a diagram puts the image in `"fig"` (a file in `assets/`) with `"fig_alt"` saying what it shows: the build embeds it, and it appears under the stem, opens full size and is printed with the answer key. A term in `content.html` gets a hover card when it is written as
 
 ```html
 <span class="term"><span class="en">Binary search</span> <span class="zh">(二分查找)</span></span>

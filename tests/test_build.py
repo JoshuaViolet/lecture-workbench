@@ -187,6 +187,26 @@ def test_images_in_question_explanations_are_embedded(make_subject):
     assert exp.startswith('see <img src="data:image/png;base64,')
 
 
+def test_a_question_figure_is_embedded_and_needs_alt_text(make_subject):
+    question = {"q": "Which curve shifted?", "opts": ["AD", "SRAS"], "ans": 0, "exp": "e",
+                "fig": "assets/dot.png", "fig_alt": "AD moves right"}
+    subject = subject_with_images(make_subject, data={"mcqData": [question]})
+    out = built(build_guide.build(str(subject)))
+    item = json.loads(re.search(r"^\s*const mcqData = (\[.*\]);$", out, re.M).group(1))[0]
+    assert item["fig"] == "data:image/png;base64," + base64.b64encode(PNG).decode()
+    assert item["fig_alt"] == "AD moves right"
+
+    no_alt = dict(question, fig_alt=" ")
+    missing = dict(question, fig="assets/gone.svg")
+    subject = subject_with_images(make_subject, name="bad", data={"mcqData": [no_alt, missing]})
+    with pytest.raises(build_guide.BuildError) as e:
+        build_guide.build(str(subject))
+    assert "mcqData[0].fig_alt is missing: describe what the figure shows" in str(e.value)
+    (subject / "data.json").write_text(json.dumps({"mcqData": [missing]}), encoding="utf-8")
+    with pytest.raises(build_guide.BuildError, match=re.escape("mcqData[0].fig: image 'assets/gone.svg' not found")):
+        build_guide.build(str(subject))
+
+
 def test_missing_and_unsupported_images_are_all_reported(make_subject):
     content = '<section id="s"><img src="assets/nope.png"><img src="assets/notes.pdf"></section>'
     subject = subject_with_images(make_subject, content=content)

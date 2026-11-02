@@ -88,6 +88,30 @@ def test_longest_answer_warns_above_forty_percent(make_subject):
     assert "longest one in 2/4 questions (limit 40%)" in out
 
 
+def test_one_stem_over_different_code_is_not_a_duplicate(make_subject):
+    # "What does this print?" over different code is a different question each time
+    ask = {"q": "What does this print?", "opts": ["0", "1", "2", "3"], "exp": "e"}
+    mcq = [dict(ask, code=f"print({i})", ans=i) for i in range(4)]
+    code, out = lint(make_subject, mcq, "--strict")
+    assert code == 0 and "duplicate" not in out, out
+    code, out = lint(make_subject, mcq + [mcq[0]], name="again")
+    assert "1 duplicate question(s) (same stem, code and figure)" in out
+
+
+def test_a_question_figure_is_checked_like_any_image(make_subject):
+    mcq = [{"q": "Which curve shifted?", "opts": ["AD", "SRAS"], "ans": 0, "exp": "e",
+            "fig": "assets/q1.svg", "fig_alt": "AD moves right"}]
+    subject = make_subject(config={"embed_images": False}, content='<section id="s"><p>text</p></section>',
+                           data={"mcqData": mcq, "termLexicon": LEXICON})
+    (subject / "assets" / "q1.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"/>', encoding="utf-8")
+    guide = build_guide.build(str(subject))
+    code, out = validate(guide)
+    assert code == 0 and "keep 1 file(s) next to the guide: assets/q1.svg" in out, out
+    os.remove(subject / "assets" / "q1.svg")
+    code, out = validate(guide)
+    assert code == 1 and "missing: assets/q1.svg" in out
+
+
 def test_question_type_tags_in_stems_warn(make_subject):
     stems = ["Mechanism: why does the loop stop?", "T01-Q02｜辨析｜哪一项正确？", "[Transfer] A new case",
              "Recall that the list is sorted. What next?"]

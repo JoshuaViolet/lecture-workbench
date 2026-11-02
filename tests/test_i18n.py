@@ -115,7 +115,7 @@ def test_english_page_shows_no_chinese_interface_text(english_page):
     }""")
     assert [t for t in texts if CJK.search(t)] == []
     assert page.evaluate("document.documentElement.lang") == "en"
-    assert page.locator(".quiz-toggle").first.inner_text() == "Hide answer and explanation"
+    assert page.locator(".quiz-toggle").first.inner_text() == "Hide"
     assert page.page_errors == []
 
 

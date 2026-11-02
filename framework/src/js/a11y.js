@@ -10,9 +10,10 @@ function initA11y() {
             else if (e.key === "ArrowLeft") { e.preventDefault(); prevCard(); }
         });
     }
-    // figure images open in the lightbox from the keyboard too
+    // figure images open in the lightbox from the keyboard too (a question's figure does this
+    // itself, since questions are redrawn)
     document.querySelectorAll("#main-content figure img").forEach(img => {
-        if (img.closest("a")) return;
+        if (img.closest("a") || img.closest("#mcq-app")) return;
         img.tabIndex = 0;
         img.addEventListener("keydown", (e) => {
             if (e.key === "Enter" || e.key === " ") { e.preventDefault(); img.click(); }

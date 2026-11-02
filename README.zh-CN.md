@@ -50,7 +50,7 @@ python3 framework/cli.py validate subjects/my-lecture --strict          # 检查
 
 - `config.json`：标识、标题、页头和目录 HTML、输出文件名。`doc_id` 是本地存储的命名空间，各讲义之间不能重复，开始使用后也不要再改。可选的 `lang` 决定页面自身界面（工具栏、目录、提示、打印页）的语言：`"zh"` 为简体中文（默认），`"en"` 为英文；正文用什么语言由你决定。界面文字都在 `framework/ui_strings.json` 里。
 - `content.html`：正文，由若干 `<section>` 组成。
-- `data.json`：`flashcards`、`mcqData`、`termLexicon` 三个数组。构建时会逐条校验，报错会指出具体是哪一项、哪个字段。选择题的选项每次渲染都会打乱，需要固定顺序的题写 `"shuffle": false`；考代码的题把代码放在可选的 `"code"` 字段里，会在题干下方按等宽字体原样显示（保留换行和缩进），含换行（`\n`）的选项也按代码显示。
+- `data.json`：`flashcards`、`mcqData`、`termLexicon` 三个数组。构建时会逐条校验，报错会指出具体是哪一项、哪个字段。选择题的选项每次渲染都会打乱，需要固定顺序的题写 `"shuffle": false`；考代码的题把代码放在可选的 `"code"` 字段里，会在题干下方按等宽字体原样显示（保留换行和缩进），含换行（`\n`）的选项也按代码显示。看图题把图放进 `"fig"`（`assets/` 里的图片文件），并用 `"fig_alt"` 说明图里画了什么：构建时会嵌进页面，图显示在题干下方，点击可放大，打印时随答案一起印出。
 - `assets/`：正文引用的图片（可选）。构建时会把图片以 `data:` URI 嵌进页面，生成的 HTML 单独拿走也能显示；引用的图片不存在会直接构建失败。`config.json` 里写 `"embed_images": false` 可以关掉嵌入，但那样页面就必须和 `assets/` 一起分发。图片写法见 [examples/README.md](examples/README.md)；幻灯片截图建议用 JPEG 或 WebP，页面超过 25 MB 时构建会提示。
 
 完整字段示例见英文 README。正文和题目怎么写（核心块顺序、题型、哪些内容不进页面）见 [AGENTS.md](AGENTS.md)，另有[心理学](docs/writing/psychology.md)、[经济学](docs/writing/economics.md)和[数据科学 / 编程](docs/writing/data-science.md)的分科补充（英文），可以直接交给帮你起草科目的 AI 助手。旧版 `data.js` 可以用 `python3 framework/migrate_datajs.py subjects/<名字>` 转换。

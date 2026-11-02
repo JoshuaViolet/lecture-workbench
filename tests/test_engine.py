@@ -1,5 +1,9 @@
 """Browser tests for the runtime engine, run against the built demo opened from file://."""
+import json
+import os
 import shutil
+
+from conftest import DEMO, build_guide
 
 
 def mcq_rows(page):
@@ -115,6 +119,64 @@ def test_collapsed_details_print_open_and_close_again(page):
     assert page.evaluate(is_open) == [True, True]
     page.evaluate("dispatchEvent(new Event('afterprint'))")
     assert page.evaluate(is_open) == [False, True]
+
+
+def fnv1a_key(text):
+    """mcqKey's FNV-1a hash, as stored before figures existed."""
+    h = 0x811c9dc5
+    for ch in text:
+        h = ((h ^ ord(ch)) * 0x01000193) & 0xffffffff
+    digits = ""
+    while True:
+        h, r = divmod(h, 36)
+        digits = "0123456789abcdefghijklmnopqrstuvwxyz"[r] + digits
+        if not h:
+            return "q" + digits
+
+
+def test_a_question_shows_its_figure_full_size_and_in_print(browser, make_subject):
+    with open(os.path.join(DEMO, "data.json"), encoding="utf-8") as f:
+        data = json.load(f)
+    data["mcqData"] = [{"q": "Which half is dropped first?", "opts": ["left", "right"], "ans": 0, "exp": "e",
+                        "fig": "assets/trace-42.svg", "fig_alt": "the search trace"}]
+    context = browser.new_context()
+    page = context.new_page()
+    page.goto("file://" + build_guide.build(str(make_subject(data=data))))
+    img = page.locator(".mcq-card .mcq-fig img")
+    assert img.get_attribute("src").startswith("data:image/svg+xml;base64,")
+    assert img.get_attribute("alt") == "the search trace"
+    img.click()
+    assert page.locator("#lightbox-modal").is_visible()
+    assert page.locator("#lightbox-caption").inner_text() == "the search trace"
+    page.keyboard.press("Escape")
+    page.evaluate("resetMCQ()")   # questions are redrawn; their figures still open from the keyboard
+    page.focus(".mcq-card .mcq-fig img")
+    page.keyboard.press("Enter")
+    assert page.locator("#lightbox-modal").is_visible()
+    page.keyboard.press("Escape")
+    page.evaluate("buildPrintSheet()")
+    assert page.locator("#print-sheet .mcq-fig img").get_attribute("alt") == "the search trace"
+    # a figure is part of what identifies a question; questions without one keep their stored key
+    keys = page.evaluate("[mcqKey({q: 'x', fig: 'a.svg'}), mcqKey({q: 'x', fig: 'b.svg'}), mcqKey({q: 'x'})]")
+    assert len(set(keys)) == 3 and keys[2] == fnv1a_key("x\u0000")
+    context.close()
+
+
+def test_check_buttons_keep_their_own_labels(page):
+    first = page.locator(".quiz-toggle").first
+    label = first.inner_text()
+    first.click()
+    assert first.inner_text() == "收起" and first.get_attribute("aria-expanded") == "true"
+    first.click()
+    assert first.inner_text() == label and first.get_attribute("aria-expanded") == "false"
+    # a card with several steps (hint, worked answer) keeps them told apart
+    page.evaluate("""document.getElementById('bs-c01').insertAdjacentHTML('beforeend',
+        '<button class="quiz-toggle" onclick="toggleQuiz(this)">看提示</button><div class="quiz-a">hint</div>'
+        + '<button class="quiz-toggle" onclick="toggleQuiz(this)">看完整解答</button><div class="quiz-a">answer</div>')""")
+    hint, answer = (page.locator("#bs-c01 .quiz-toggle").nth(i) for i in (1, 2))
+    for button in (hint, answer, hint, answer):
+        button.click()
+    assert [hint.inner_text(), answer.inner_text()] == ["看提示", "看完整解答"]
 
 
 def test_code_field_and_multiline_options_keep_their_layout(page):

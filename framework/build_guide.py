@@ -82,7 +82,7 @@ LARGE_GUIDE_BYTES = 25 * 1024 * 1024
 SCHEMA = {
     "flashcards": {"front": (str, True), "back": (str, True), "type": (str, False)},
     "mcqData": {"q": (str, True), "opts": (list, True), "ans": (int, True), "exp": (str, True),
-                "code": (str, False), "shuffle": (bool, False)},
+                "code": (str, False), "fig": (str, False), "fig_alt": (str, False), "shuffle": (bool, False)},
     "termLexicon": {"keys": (list, True), "term": (str, True), "ipa": (str, False),
                     "chunks": (str, False), "parts": (str, False), "hook": (str, False)},
 }
@@ -196,6 +196,12 @@ def check_data(data):
                 ans = item.get("ans")
                 if isinstance(ans, int) and not isinstance(ans, bool) and not 0 <= ans < len(opts):
                     errors.append(f"{where}.ans {ans} is out of range for {len(opts)} options")
+            if name == "mcqData" and isinstance(item.get("fig"), str):
+                # the figure is shown with the question, so it needs a text alternative like any figure
+                if not item["fig"].strip():
+                    errors.append(f"{where}.fig must be the path of an image file, e.g. assets/q1.svg")
+                elif not (isinstance(item.get("fig_alt"), str) and item["fig_alt"].strip()):
+                    errors.append(f"{where}.fig_alt is missing: describe what the figure shows")
             if name == "termLexicon" and isinstance(item.get("keys"), list):
                 if not item["keys"] or not all(isinstance(k, str) and k.strip() for k in item["keys"]):
                     errors.append(f"{where}.keys must be a non-empty list of strings")
@@ -390,6 +396,10 @@ def build(subject_dir):
                 for field in fields:
                     if isinstance(item.get(field), str):
                         item[field] = embed.html(item[field], f"{name}[{i}].{field}")
+        # a question's figure is a path, not HTML
+        for i, item in enumerate(data.get("mcqData", [])):
+            if isinstance(item.get("fig"), str):
+                item["fig"] = embed.uri(item["fig"], f"mcqData[{i}].fig") or item["fig"]
         if embed.errors:
             raise BuildError("\n".join(embed.errors))
     for name in DATA_ARRAYS:

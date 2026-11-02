@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- A question can show the diagram it is about: `"fig"` (an image in the subject's `assets/` folder) and `"fig_alt"` in `mcqData`. The build embeds the image; it appears under the stem, opens full size (also from the keyboard) and is printed with the answer key. A missing image, or a figure without `fig_alt`, fails the build.
+
+### Changed
+- The button of an inline check keeps the label its author wrote ("Hint", "Worked answer") and reads "Hide" (收起) while its answer is open. Before, the first click replaced every label with the same text, so a card with several steps could not tell them apart.
+
+### Fixed
+- The validator took questions with the same stem but different code ("What does this print?") for duplicates, which failed `--strict`. A duplicate is now the same stem, code and figure.
+
 ## 0.3.1
 
 ### Added

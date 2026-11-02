@@ -55,6 +55,7 @@ These apply to `mcqData` in `data.json`.
 - Distractors come from real misconceptions and are as long and as specific as the correct option. The correct option may be the only longest one in at most 40% of questions (chance is about 25% with four options); above that, students can score by picking the longest without reading the stem.
 - Options are shuffled every time the page renders. In `exp`, refer to an option by its content, never as A/B/C/D. A question whose order must stay fixed (for example "all of the above") sets `"shuffle": false`.
 - Put the code a question is about in its `code` field; it is shown in a monospace block exactly as written. A multi-line option is written with line breaks (`\n`) in the string and is shown as code.
+- Put the diagram a question is about in its `fig` field (an image in the subject's `assets/` folder) and say what it shows in `fig_alt`; it is shown under the stem.
 - The validator warns about the last three rules (longest option, type tags in stems, letters in explanations). Fix the warnings before you hand the guide over, or explain why they stay.
 
 ## Never
