@@ -25,7 +25,7 @@ Open with an examinable statement as usual (for example, "if planned investment 
 | Discrimination | identity vs equilibrium, stock vs flow, nominal vs real, shift vs movement along |
 | Derivation | one step from the assumptions to the conclusion |
 | Calculation | equilibrium, multiplier, value added and similar from numbers |
-| Graph | which curve moves, its direction, where the new equilibrium is |
+| Graph | which curve moves, its direction, where the new equilibrium is (the question's diagram goes in its `fig` field) |
 | Policy | an instrument's direction and its result |
 | Limitation | whether the conclusion survives relaxing an assumption |
 

@@ -208,11 +208,15 @@ def lint_mcq(mcq):
         if top / len(fixed) > 0.5:
             warnings.append(f"{top}/{len(fixed)} questions with shuffle=false have option "
                             f"{chr(65 + pos)} as the answer")
+    # a question is its stem with its code and figure: "What does this print?" over different code
+    # is a different question
     seen, dupes = set(), set()
     for m in mcq:
-        (dupes if m["q"] in seen else seen).add(m["q"])
+        key = (m["q"], m.get("code") or "", m.get("fig") or "")
+        (dupes if key in seen else seen).add(key)
     if dupes:
-        warnings.append(f"{len(dupes)} duplicate question stem(s), e.g. {sorted(dupes)[0][:40]!r}")
+        warnings.append(f"{len(dupes)} duplicate question(s) (same stem, code and figure), "
+                        f"e.g. {sorted(dupes)[0][0][:40]!r}")
     return warnings
 
 
@@ -292,11 +296,13 @@ def main(argv):
     print("--- offline ---")
     data = {name: extract_array(script, name) for name in ("flashcards", "mcqData", "termLexicon")}
     page_urls = loaded_urls(html)
-    # HTML in the data arrays (explanations, etymologies) is inserted into the page at runtime
+    # HTML in the data arrays (explanations, etymologies) is inserted into the page at runtime,
+    # and so is a question's figure
     for item in (data["mcqData"] or []) + (data["termLexicon"] or []):
         for field in ("exp", "parts"):
             if isinstance(item.get(field), str):
                 page_urls += loaded_urls(item[field])
+    page_urls += [m["fig"] for m in data["mcqData"] or [] if isinstance(m.get("fig"), str)]
     found = [c for c in (classify_url(u, base) for u in page_urls) if c]
     remote = sorted({u for kind, u in found if kind == "remote"})
     local = sorted({p for kind, p in found if kind == "local"})

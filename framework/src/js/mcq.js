@@ -4,10 +4,10 @@ let mcqOnlyWrong = false;    // practising only the questions answered wrongly l
 let mcqWrongSet = [];        // their keys, fixed when that mode was turned on
 
 // ---------- remembered results ----------
-// Each question's last result is kept in this browser, keyed by its stem and code, so adding or
-// reordering questions keeps the records and editing a stem starts that question afresh.
+// Each question's last result is kept in this browser, keyed by its stem, code and figure, so
+// adding or reordering questions keeps the records and editing a stem starts that question afresh.
 function mcqKey(item) {
-    const s = item.q + "\u0000" + (item.code || "");
+    const s = item.q + "\u0000" + (item.code || "") + (item.fig ? "\u0000" + item.fig : "");
     let h = 0x811c9dc5;   // FNV-1a
     for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
     return "q" + (h >>> 0).toString(36);
@@ -91,6 +91,9 @@ function initMCQ() {
         qTitle.textContent = item.q;
         card.appendChild(qTitle);
 
+        // optional figure the question is about (a diagram to read); click or Enter shows it full size
+        if (item.fig) card.appendChild(mcqFigure(item));
+
         // optional code the question is about, shown as written (whitespace kept)
         if (item.code) {
             const pre = document.createElement("pre");
@@ -124,6 +127,21 @@ function initMCQ() {
 
         container.appendChild(card);
     });
+}
+
+function mcqFigure(item) {
+    const fig = document.createElement("figure");
+    fig.className = "mcq-fig";
+    const img = document.createElement("img");
+    img.src = item.fig;
+    img.alt = item.fig_alt || "";
+    // questions are redrawn on every reset, so their figures get keyboard access here
+    img.tabIndex = 0;
+    img.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); img.click(); }
+    });
+    fig.appendChild(img);
+    return fig;
 }
 
 function selectOption(qIdx, selectedIdx, btn) {

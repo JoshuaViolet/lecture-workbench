@@ -19,7 +19,8 @@ function buildPrintSheet() {
         mcqData.forEach(m => {
             // options are shuffled on screen, so print the answer text rather than a letter
             const code = m.code ? '<pre class="mcq-code"><code>' + escapeHtml(m.code) + '</code></pre>' : '<br>';
-            html += '<li style="margin-bottom:8px;"><span style="white-space:pre-wrap;">' + escapeHtml(m.q) + '</span>' + code
+            const fig = m.fig ? '<figure class="mcq-fig"><img src="' + escapeHtml(m.fig) + '" alt="' + escapeHtml(m.fig_alt || "") + '"></figure>' : '';
+            html += '<li style="margin-bottom:8px;"><span style="white-space:pre-wrap;">' + escapeHtml(m.q) + '</span>' + fig + code
                 + '<strong>✓</strong> <span style="white-space:pre-wrap;">' + escapeHtml(m.opts[m.ans]) + '</span><br><span style="color:#444;">' + m.exp + '</span></li>';
         });
         html += '</ol>';

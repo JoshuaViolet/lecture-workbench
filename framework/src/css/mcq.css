@@ -43,6 +43,21 @@
     white-space: pre-wrap;
 }
 
+/* optional "fig" field: the diagram a question is about, under the stem. A white backing keeps a
+   diagram drawn on a transparent background readable in the dark theme. */
+.mcq-fig {
+    margin: -4px 0 14px;
+    text-align: center;
+}
+.mcq-fig img {
+    max-width: 100%;
+    max-height: 320px;
+    padding: 6px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
 /* optional "code" field: a block under the stem, shown exactly as written */
 .mcq-code {
     margin: -4px 0 14px;

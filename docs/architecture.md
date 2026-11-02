@@ -38,7 +38,7 @@ Data used to be JavaScript source (`data.js`) cut out with a regex that depended
 
 ### Images
 
-A lesson refers to its images by relative path (`<img src="assets/s12.png">`), which is convenient to write but would make the guide depend on a folder next to it. The builder therefore embeds every local image as a `data:` URI: `<img src>` in `content.html`, `header_html` and `nav_html`, `url()` in `subject_css.css`, and `<img>` inside the HTML fields of the data (`mcqData[].exp`, `termLexicon[].parts`), which reach the page through `innerHTML`. Comments and the contents of `<script>`, `<style>` and `<textarea>` are left alone, so a commented-out figure does not need its file. A missing file, or a file that is not an image type browsers display, fails the build, with every problem listed at once. `"embed_images": false` in `config.json` keeps the links, for a guide that will always travel with its `assets/` folder.
+A lesson refers to its images by relative path (`<img src="assets/s12.png">`), which is convenient to write but would make the guide depend on a folder next to it. The builder therefore embeds every local image as a `data:` URI: `<img src>` in `content.html`, `header_html` and `nav_html`, `url()` in `subject_css.css`, `<img>` inside the HTML fields of the data (`mcqData[].exp`, `termLexicon[].parts`), which reach the page through `innerHTML`, and a question's figure (`mcqData[].fig`). Comments and the contents of `<script>`, `<style>` and `<textarea>` are left alone, so a commented-out figure does not need its file. A missing file, or a file that is not an image type browsers display, fails the build, with every problem listed at once. `"embed_images": false` in `config.json` keeps the links, for a guide that will always travel with its `assets/` folder.
 
 Embedding costs about a third more bytes than the image files (base64). The build prints each guide's size and warns above 25 MB, which phones open slowly; a 30 MB test guide with 40 slides parses in about half a second in desktop Chromium. An image used twice is embedded twice.
 
@@ -52,7 +52,7 @@ The engine is plain DOM code run once at the end of `<body>`:
 |---|---|
 | storage | `lsGet` / `lsSet` / `readList` / `writeList`, and `changeList` / `mergeById` for annotation lists (below). Every `localStorage` access is guarded; all keys derive from `DOC_ID`, so many guides can share an origin |
 | annotations | highlights and margin notes (below) |
-| practice | flashcards, MCQ with per-render option shuffling, an optional code block and remembered results, collapsible inline checks |
+| practice | flashcards, MCQ with per-render option shuffling, an optional code block or figure and remembered results, collapsible inline checks whose buttons keep their own labels |
 | term cards | builds an index from `termLexicon` keys and attaches hover cards to `span.en` and `<strong>` text that matches. A click pins the card; a click on the reader's own highlight inside a term also shows the highlight's toolbar, and one on a note there opens the note |
 | layout | sidebar collapse, colour theme, contents marker, progress bar, lightbox for figure images, a scrolling box around each table |
 | print | `beforeprint` builds a self-test appendix and forces lazy images to load |
