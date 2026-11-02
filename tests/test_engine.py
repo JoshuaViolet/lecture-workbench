@@ -1,4 +1,5 @@
 """Browser tests for the runtime engine, run against the built demo opened from file://."""
+import shutil
 
 
 def mcq_rows(page):
@@ -16,6 +17,37 @@ def test_page_makes_no_network_requests(browser, demo_guide):
     page.wait_for_load_state("load")
     assert [u for u in requests if not u.startswith(("file://", "data:"))] == []
     context.close()
+
+
+def test_the_guide_works_as_a_single_copied_file(browser, demo_guide, tmp_path):
+    alone = tmp_path / "Downloads" / "guide.html"   # no assets/ folder next to it
+    alone.parent.mkdir()
+    shutil.copy(demo_guide, alone)
+    context = browser.new_context()
+    page = context.new_page()
+    requests = []
+    page.on("request", lambda r: requests.append(r.url))
+    page.goto(alone.as_uri())
+    img = page.locator("figure img")
+    img.scroll_into_view_if_needed()
+    page.wait_for_function("document.querySelector('figure img').complete")
+    assert img.evaluate("i => i.naturalWidth") > 0
+    assert requests == [alone.as_uri()]
+    context.close()
+
+
+def test_figure_images_open_in_the_lightbox(page):
+    page.click("figure img")
+    modal = page.locator("#lightbox-modal")
+    assert modal.is_visible()
+    assert page.locator("#lightbox-img").get_attribute("src").startswith("data:image/svg+xml;base64,")
+    assert page.locator("#lightbox-caption").inner_text().startswith("图 1")
+    assert page.evaluate("document.activeElement.className") == "lightbox-close"
+    page.keyboard.press("Escape")
+    assert modal.is_hidden()
+    page.focus("figure img")
+    page.keyboard.press("Enter")
+    assert modal.is_visible()
 
 
 def test_init_raises_no_errors(page):

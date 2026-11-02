@@ -111,8 +111,12 @@ p {
     padding: 14px;
     text-align: center;
     box-shadow: 0 2px 5px rgba(0,0,0,0.04);
-    cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* an image in a figure opens full size in the lightbox */
+#main-content figure img {
+    cursor: zoom-in;
 }
 
 .slide-fig:hover {

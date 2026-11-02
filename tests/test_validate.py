@@ -95,3 +95,29 @@ def test_letter_references_in_explanations_warn_unless_order_is_fixed(make_subje
     assert "Q1, Q2, Q3" in out and "Q4" not in out and "Q5" not in out
     code, _ = lint(make_subject, mcq, "--strict", name="strict")
     assert code == 1
+
+
+def test_anything_loaded_from_the_network_fails(make_subject):
+    content = ('<section id="s"><p><a href="https://example.com/reading">a link is fine</a></p>'
+               '<p><img src="https://example.com/slide.png" alt=""></p>'
+               '<script src="https://cdn.example.com/mathjax.js"></script>'
+               '<div style="background: url(//cdn.example.com/bg.png)"></div></section>')
+    code, out = validate(build_guide.build(str(make_subject(content=content))))
+    assert code == 1 and "✗ loads nothing from the network" in out
+    for url in ("https://example.com/slide.png", "https://cdn.example.com/mathjax.js", "//cdn.example.com/bg.png"):
+        assert url in out
+    assert "example.com/reading" not in out
+
+
+def test_files_beside_the_guide_warn_and_missing_ones_fail(make_subject):
+    subject = make_subject(config={"embed_images": False})
+    code, out = validate(build_guide.build(str(subject)))
+    assert code == 0 and "not a single file: keep 1 file(s) next to the guide: assets/trace-42.svg" in out
+    os.remove(subject / "assets" / "trace-42.svg")
+    code, out = validate(str(subject / "Binary_Search_Demo.html"))
+    assert code == 1 and "missing: assets/trace-42.svg" in out
+
+
+def test_the_demo_guide_embeds_its_figure(demo_guide):
+    code, out = validate(demo_guide)
+    assert code == 0 and "✓ files it points to exist  (1 embedded)" in out and "not a single file" not in out

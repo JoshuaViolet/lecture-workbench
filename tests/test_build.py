@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import re
@@ -127,3 +128,72 @@ def test_migrate_datajs_keeps_known_arrays_only(tmp_path):
     data = json.loads((tmp_path / "data.json").read_text(encoding="utf-8"))
     assert data == {"flashcards": [{"front": "f", "back": "b"}],
                     "mcqData": [{"q": "q", "opts": ["a", "b"], "ans": 1, "exp": "e"}], "termLexicon": []}
+
+
+PNG = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==")
+
+
+def subject_with_images(make_subject, name="subject", config=None, content=None, data=None):
+    subject = make_subject(name=name, config=config, data=data, content=content or (
+        '<section id="s"><figure class="slide-fig"><img alt="a" src="assets/dot.png"></figure>'
+        "<p><img src='assets/two%20words.png' alt=\"b\"> and <img src=\"https://example.com/remote.png\"></p>"
+        '<!-- <img src="assets/old-figure-not-there.png"> -->'
+        '<pre><code>&lt;img src="assets/escaped.png"&gt;</code></pre></section>'))
+    (subject / "assets").mkdir(exist_ok=True)
+    (subject / "assets" / "dot.png").write_bytes(PNG)
+    (subject / "assets" / "two words.png").write_bytes(PNG)
+    return subject
+
+
+def test_local_images_are_embedded_so_the_guide_is_one_file(make_subject):
+    subject = subject_with_images(make_subject)
+    (subject / "subject_css.css").write_text(".x { background: url('assets/dot.png'); }", encoding="utf-8")
+    out = built(build_guide.build(str(subject)))
+    uri = "data:image/png;base64," + base64.b64encode(PNG).decode()
+    assert out.count(f'src="{uri}"') == 2 and f'url("{uri}")' in out
+    assert "assets/dot.png" not in out and "two%20words" not in out
+    # what is not a local image in the page stays as written
+    assert 'src="https://example.com/remote.png"' in out
+    assert '<!-- <img src="assets/old-figure-not-there.png"> -->' in out
+    assert '&lt;img src="assets/escaped.png"&gt;' in out
+
+
+def test_images_in_question_explanations_are_embedded(make_subject):
+    subject = subject_with_images(make_subject, data={"mcqData": [
+        {"q": "q", "opts": ["a", "b"], "ans": 0, "exp": 'see <img src="assets/dot.png" alt="">'}]})
+    out = built(build_guide.build(str(subject)))
+    exp = json.loads(re.search(r"^\s*const mcqData = (\[.*\]);$", out, re.M).group(1))[0]["exp"]
+    assert exp.startswith('see <img src="data:image/png;base64,')
+
+
+def test_missing_and_unsupported_images_are_all_reported(make_subject):
+    content = '<section id="s"><img src="assets/nope.png"><img src="assets/notes.pdf"></section>'
+    subject = subject_with_images(make_subject, content=content)
+    (subject / "assets" / "notes.pdf").write_bytes(b"%PDF-1.4")
+    with pytest.raises(build_guide.BuildError) as e:
+        build_guide.build(str(subject))
+    msg = str(e.value)
+    assert "content.html: image 'assets/nope.png' not found" in msg
+    assert "content.html: cannot embed 'assets/notes.pdf'" in msg
+
+
+def test_embed_images_false_keeps_the_links(make_subject):
+    out = built(build_guide.build(str(subject_with_images(make_subject, config={"embed_images": False}))))
+    assert 'src="assets/dot.png"' in out and 'src="data:' not in out
+
+
+def test_embed_images_must_be_true_or_false(make_subject):
+    with pytest.raises(build_guide.BuildError, match="config.embed_images must be true or false"):
+        build_guide.build(str(make_subject(config={"embed_images": "yes"})))
+
+
+def test_config_values_are_never_read_as_placeholders(make_subject):
+    title = "Templates: {{TITLE}} and {{DOC_ID_JSON}}"
+    out = built(build_guide.build(str(make_subject(config={"title": title, "sidebar_title": title}))))
+    assert f"<title>{title}</title>" in out
+    assert json.loads(re.search(r"const GUIDE_TITLE = (.*);", out).group(1)) == title
+
+
+def test_build_reports_the_guide_size(make_subject, capsys):
+    assert build_guide.main([str(make_subject())]) == 0
+    assert re.search(r"BUILD OK .* -> Binary_Search_Demo\.html \(\d+ KB\)", capsys.readouterr().out)

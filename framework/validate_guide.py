@@ -8,7 +8,10 @@ Usage:
 Checks (any failure exits 1):
   structure   anchors resolve, getElementById targets exist, inline handlers are defined,
               tags are balanced, no unfilled placeholders, every <script> passes `node --check`
-  content     no raw LaTeX (the page has no math renderer), every assets/ image exists,
+  offline     nothing is loaded from the network (scripts, styles, fonts, images, frames);
+              any local file the page still points to exists (a warning says which files
+              must be kept next to the guide; built guides normally embed their images)
+  content     no raw LaTeX (the page has no math renderer),
               every English term in span.en / <strong> has a term card (or is allow-listed)
 Teaching-quality lint (warnings; failures with --strict):
               the correct option is the longest one in more than 40% of questions, question-type
@@ -16,13 +19,17 @@ Teaching-quality lint (warnings; failures with --strict):
               shuffled, answer positions cluster in questions that opt out of shuffling,
               duplicate question stems
 """
+import html as htmllib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
 from html.parser import HTMLParser
+from urllib.parse import unquote, urlsplit
+from urllib.request import url2pathname
 
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param",
         "source", "track", "wbr"}
@@ -48,6 +55,53 @@ LETTER_REF_RE = re.compile(
     r"|\b[A-E]\s+(?:is|was)\s+(?:(?:not\s+)?(?:wrong|right|correct|incorrect)|the answer)\b"
     r"|选项\s*[A-E](?![A-Za-z])"
     r"|(?<![A-Za-z])[A-E]\s*(?:项|错|对|是正确|不对)")
+
+
+# Resources a page loads by itself. An <a href> is only a link and loads nothing until clicked.
+TAG_RE = re.compile(r"""<([A-Za-z][\w-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>""")
+LOAD_ATTR_RE = re.compile(r"""(?<![\w-])(src|srcset|poster|data|href|style)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))""",
+                          re.I)
+HREF_LOADS = {"link", "image", "use", "feimage"}
+CSS_REF_RE = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s]+))\s*\)|@import\s+(?:"([^"]*)"|'([^']*)')""", re.I)
+SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+
+
+def css_refs(css):
+    return [next(g for g in m.groups() if g is not None) for m in CSS_REF_RE.finditer(css)]
+
+
+def loaded_urls(page_html):
+    """Every URL the page would fetch on its own: src, srcset, poster, <object data>, the href of
+    <link> and SVG <image>/<use>, and url() / @import in CSS. Scripts and comments are skipped."""
+    page_html = re.sub(r"<!--.*?-->", "", page_html, flags=re.S)
+    page_html = re.sub(r"(<script\b[^>]*>).*?</script>", r"\1", page_html, flags=re.S | re.I)   # keep src=
+    urls = []
+    for css in re.findall(r"<style\b[^>]*>(.*?)</style>", page_html, flags=re.S | re.I):
+        urls += css_refs(css)
+    page_html = re.sub(r"<style\b[^>]*>.*?</style>", "", page_html, flags=re.S | re.I)
+    for tag, attrs in TAG_RE.findall(page_html):
+        tag = tag.lower()
+        for m in LOAD_ATTR_RE.finditer(attrs):
+            name, value = m.group(1).lower(), htmllib.unescape(next(g for g in m.groups()[1:] if g is not None))
+            if name == "style":
+                urls += css_refs(value)
+            elif name == "srcset":
+                urls += [c.split()[0] for c in value.split(",") if c.strip()]
+            elif (name != "href" or tag in HREF_LOADS) and (name != "data" or tag == "object"):
+                urls.append(value)
+    return urls
+
+
+def classify_url(url, base):
+    """('remote', url), ('local', path) or None for URLs that load nothing from outside the page."""
+    url = url.strip()
+    if not url or url.startswith("#") or url.lower().startswith(("data:", "blob:", "javascript:", "about:")):
+        return None
+    if url.startswith("//") or (SCHEME_RE.match(url) and not url.lower().startswith("file:")):
+        return ("remote", url)
+    if url.lower().startswith("file:"):
+        return ("local", url2pathname(urlsplit(url).path))
+    return ("local", os.path.normpath(os.path.join(base, unquote(urlsplit(url).path))))
 
 
 def run_node(js_source, *args):
@@ -183,19 +237,39 @@ def main(argv):
             syntax_errors.append(f"script {i + 1}: " + out.splitlines()[-1][:160] if out else f"script {i + 1}")
     check("scripts parse (node --check)", not syntax_errors, "; ".join(syntax_errors))
 
+    print("--- offline ---")
+    data = {name: extract_array(script, name) for name in ("flashcards", "mcqData", "termLexicon")}
+    page_urls = loaded_urls(html)
+    # HTML in the data arrays (explanations, etymologies) is inserted into the page at runtime
+    for item in (data["mcqData"] or []) + (data["termLexicon"] or []):
+        for field in ("exp", "parts"):
+            if isinstance(item.get(field), str):
+                page_urls += loaded_urls(item[field])
+    found = [c for c in (classify_url(u, base) for u in page_urls) if c]
+    remote = sorted({u for kind, u in found if kind == "remote"})
+    local = sorted({p for kind, p in found if kind == "local"})
+    missing = [p for p in local if not os.path.isfile(p)]
+    embedded = sum(1 for u in page_urls if u.strip().lower().startswith("data:"))
+    check("loads nothing from the network", not remote,
+          "breaks offline: " + ", ".join(u[:80] for u in remote[:5])
+          + " (link to it with <a href>, or save the file locally so the build embeds it)" if remote else "")
+    check("files it points to exist", not missing,
+          "missing: " + ", ".join(os.path.relpath(p, base) for p in missing[:5]) if missing
+          else (f"{embedded} embedded" if embedded else ""))
+    beside = [p for p in local if p not in missing]
+    if beside:
+        print(f"  ! not a single file: keep {len(beside)} file(s) next to the guide: "
+              + ", ".join(os.path.relpath(p, base) for p in beside[:5]) + (", …" if len(beside) > 5 else "")
+              + " (images are embedded unless config.embed_images is false)")
+
     print("--- content ---")
     tex = re.findall(r"\$[^$\n]{1,80}\$", visible)
     tex += re.findall(r"\\(?:frac|sqrt|alpha|beta|Delta|sigma|times|cdot|leq|geq|neq|rightarrow)\b", visible)
     check("no raw LaTeX in visible text", not tex, str(tex[:3]) if tex else "")
 
-    data = {name: extract_array(script, name) for name in ("flashcards", "mcqData", "termLexicon")}
     data_text = json.dumps({k: v for k, v in data.items() if v}, ensure_ascii=False)
     data_tex = re.findall(r"\\\\(?:frac|sqrt|alpha|beta|Delta|sigma|times|cdot|leq|geq|neq|rightarrow)\b", data_text)
     check("no raw LaTeX in data", not data_tex, str(data_tex[:3]) if data_tex else "")
-
-    refs = sorted(set(re.findall(r"assets/[\w./-]+\.(?:jpg|jpeg|png|webp|gif|svg)", html)))
-    missing = [r for r in refs if not os.path.exists(os.path.join(base, r))]
-    check("referenced images exist", not missing, str(missing) if missing else f"{len(refs)} references")
 
     lexicon = data["termLexicon"]
     main_m = re.search(r'<main id="main-content">(.*)</main>', visible, re.S)

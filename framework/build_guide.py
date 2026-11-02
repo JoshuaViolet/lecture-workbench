@@ -12,23 +12,29 @@ Input:   framework/template.html      page skeleton; pulls in framework/src/css/
          <subject_dir>/content.html    the lesson body
          <subject_dir>/data.json       flashcards, mcqData, termLexicon
          <subject_dir>/subject_css.css, subject_js.js   (optional)
-Output:  <subject_dir>/<config.output>
+         images the lesson references, e.g. <subject_dir>/assets/*.png
+Output:  <subject_dir>/<config.output>, one file that needs nothing else
 
 The engine's CSS and JS live in modules under framework/src/. Each module is pasted
 in place of its @@INCLUDE:...@@ marker in template.html, indented to match the marker,
-so the result is still one self-contained file.
+so the result is still one self-contained file. Local images (<img src> in the HTML,
+url() in subject_css.css) are embedded as data: URIs for the same reason, unless
+config.embed_images is false.
 
 The template is then filled in two passes. Placeholders ({{NAME}}, and {{UI:key}} for interface
 strings in the subject's language) are replaced first, each escaped for where it appears;
-then zones (@@ZONE:...@@) are filled in a single
-regex pass, so text inside content.html or data.json is never re-read as a marker.
+then zones (@@ZONE:...@@) are filled. Each pass is a single regex pass, so text inserted
+from config.json, content.html or data.json is never re-read as a marker.
 """
+import base64
 import html
 import json
 import os
 import re
 import subprocess
 import sys
+from urllib.parse import unquote, urlsplit
+from urllib.request import url2pathname
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -44,18 +50,32 @@ DEFAULT_LANG = "zh"
 UI_SLOT_RE = re.compile(r"\{(\w+)\}")
 
 CONFIG_FIELDS = {
-    # name: (required, description)
-    "doc_id": (True, "storage namespace; letters, digits, '_' or '-'; never change once published"),
-    "app_id": (True, "fingerprint written into exported backups"),
-    "title": (True, "browser tab title"),
-    "output": (True, "generated file name, e.g. My_Guide.html"),
-    "lang": (False, "interface language, 'zh' (default) or 'en'"),
-    "sidebar_title": (False, "sidebar heading (defaults to title)"),
-    "sidebar_meta": (False, "small text under the sidebar heading"),
-    "search_placeholder": (False, "placeholder of the sidebar search box"),
-    "header_html": (False, "raw HTML inserted at the top of <main>"),
-    "nav_html": (False, "raw <li> items for the sidebar table of contents"),
+    # name: (required, type, description)
+    "doc_id": (True, str, "storage namespace; letters, digits, '_' or '-'; never change once published"),
+    "app_id": (True, str, "fingerprint written into exported backups"),
+    "title": (True, str, "browser tab title"),
+    "output": (True, str, "generated file name, e.g. My_Guide.html"),
+    "lang": (False, str, "interface language, 'zh' (default) or 'en'"),
+    "sidebar_title": (False, str, "sidebar heading (defaults to title)"),
+    "sidebar_meta": (False, str, "small text under the sidebar heading"),
+    "search_placeholder": (False, str, "placeholder of the sidebar search box"),
+    "header_html": (False, str, "raw HTML inserted at the top of <main>"),
+    "nav_html": (False, str, "raw <li> items for the sidebar table of contents"),
+    "embed_images": (False, bool, "put local images inside the page so it stays one file (default true)"),
 }
+
+# Image types browsers display, by extension; these are the files embedding accepts.
+IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif",
+               ".webp": "image/webp", ".avif": "image/avif", ".svg": "image/svg+xml", ".bmp": "image/bmp",
+               ".ico": "image/x-icon"}
+# Where an <img> in raw HTML is not really an image: comments, and elements whose content is raw text.
+NOT_MARKUP_RE = re.compile(r"<!--.*?-->|<(script|style|textarea)\b.*?</\1\s*>", re.S | re.I)
+IMG_TAG_RE = re.compile(r"""<img\b(?:[^>"']|"[^"]*"|'[^']*')*>""", re.I)
+SRC_ATTR_RE = re.compile(r"""(?<![\w-])(src\s*=\s*)(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))""", re.I)
+CSS_URL_RE = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s]+))\s*\)""", re.I)
+SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+# Above this size a guide still works, but phones open it slowly.
+LARGE_GUIDE_BYTES = 25 * 1024 * 1024
 
 # field: (type, required)
 SCHEMA = {
@@ -111,11 +131,11 @@ def check_config(cfg, languages=(DEFAULT_LANG,)):
     errors, warnings = [], []
     if not isinstance(cfg, dict):
         raise BuildError("config.json must contain a JSON object")
-    for name, (required, desc) in CONFIG_FIELDS.items():
+    for name, (required, typ, desc) in CONFIG_FIELDS.items():
         if required and not cfg.get(name):
             errors.append(f"config.{name} is required ({desc})")
-        elif name in cfg and not isinstance(cfg[name], str):
-            errors.append(f"config.{name} must be a string")
+        elif name in cfg and not isinstance(cfg[name], typ):
+            errors.append(f"config.{name} must be " + ("true or false" if typ is bool else "a string"))
     for name in ("doc_id", "app_id"):
         if isinstance(cfg.get(name), str) and cfg[name] and not ID_RE.match(cfg[name]):
             errors.append(f"config.{name} {cfg[name]!r} may only contain letters, digits, '_' and '-'")
@@ -170,6 +190,69 @@ def check_data(data):
                 if not item["keys"] or not all(isinstance(k, str) and k.strip() for k in item["keys"]):
                     errors.append(f"{where}.keys must be a non-empty list of strings")
     return errors
+
+
+def local_path(ref, base_dir):
+    """The file on disk a URL in the page points to, or None if it is not a local file
+    (data:, http:, //host, #fragment, ...). Relative URLs resolve against base_dir."""
+    ref = html.unescape(ref).strip()
+    if not ref or ref.startswith(("#", "//")):
+        return None
+    if SCHEME_RE.match(ref):
+        return url2pathname(urlsplit(ref).path) if ref[:5].lower() == "file:" else None
+    return os.path.normpath(os.path.join(base_dir, unquote(urlsplit(ref).path)))
+
+
+class ImageEmbedder:
+    """Replaces references to local image files with data: URIs, collecting every problem."""
+
+    def __init__(self, base_dir):
+        self.base_dir = base_dir
+        self.errors = []
+        self.cache = {}
+
+    def uri(self, ref, where):
+        path = local_path(ref, self.base_dir)
+        if path is None:
+            return None
+        if path not in self.cache:
+            mime = IMAGE_TYPES.get(os.path.splitext(path)[1].lower())
+            if not mime:
+                self.errors.append(f"{where}: cannot embed {ref!r}: not an image type browsers show "
+                                   f"({', '.join(sorted(IMAGE_TYPES))})")
+                return None
+            try:
+                with open(path, "rb") as f:
+                    self.cache[path] = f"data:{mime};base64," + base64.b64encode(f.read()).decode("ascii")
+            except OSError:
+                self.errors.append(f"{where}: image {ref!r} not found (looked for {path})")
+                return None
+        return self.cache[path]
+
+    def html(self, text, where):
+        """<img src> outside comments, <script>, <style> and <textarea>."""
+        def img(m):
+            def attr(a):
+                uri = self.uri(next(g for g in a.groups()[1:] if g is not None), where)
+                return a.group(0) if uri is None else f'{a.group(1)}"{uri}"'
+            return SRC_ATTR_RE.sub(attr, m.group(0), count=1)
+
+        out, pos = [], 0
+        for skip in NOT_MARKUP_RE.finditer(text):
+            out += [IMG_TAG_RE.sub(img, text[pos:skip.start()]), skip.group(0)]
+            pos = skip.end()
+        out.append(IMG_TAG_RE.sub(img, text[pos:]))
+        return "".join(out)
+
+    def css(self, text, where):
+        def url(m):
+            uri = self.uri(next(g for g in m.groups() if g is not None), where)
+            return m.group(0) if uri is None else f'url("{uri}")'
+        return CSS_URL_RE.sub(url, text)
+
+
+def human_size(n):
+    return f"{n / 1024 / 1024:.1f} MB" if n >= 1024 * 1024 else f"{max(1, round(n / 1024))} KB"
 
 
 def assemble_template(framework_dir=HERE):
@@ -261,13 +344,14 @@ def build(subject_dir):
         "{{GUIDE_TITLE_JSON}}": js_literal(sidebar_title),
         "{{UI_STRINGS_JSON}}": js_literal(ui),
     }
-    for token, value in placeholders.items():
-        if token not in tpl:
-            raise BuildError(f"template.html is missing placeholder {token}")
-        tpl = tpl.replace(token, value)
-    leftover = re.findall(r"\{\{[A-Z_]+\}\}", tpl)
-    if leftover:
-        raise BuildError(f"template.html has placeholders the builder does not fill: {sorted(set(leftover))}")
+    found = set(re.findall(r"\{\{[A-Z_]+\}\}", tpl))
+    if found != set(placeholders):
+        missing, extra = sorted(set(placeholders) - found), sorted(found - set(placeholders))
+        raise BuildError("template.html placeholders do not match the builder's: "
+                         + "; ".join(([f"missing {missing}"] if missing else [])
+                                     + ([f"not filled by the builder {extra}"] if extra else [])))
+    # one pass, so a config value that happens to contain {{NAME}} is inserted as it is
+    tpl = re.sub(r"\{\{[A-Z_]+\}\}", lambda m: placeholders[m.group(0)], tpl)
 
     # --- pass 2: zones, filled in one pass so inserted text is never rescanned ---
     def optional_file(name):
@@ -281,6 +365,21 @@ def build(subject_dir):
         "EXTRA_CSS": optional_file("subject_css.css"),
         "EXTRA_JS": optional_file("subject_js.js"),
     }
+    if cfg.get("embed_images", True):
+        # local images go inside the page, so the guide still works when it is the only file copied
+        embed = ImageEmbedder(subject_dir)
+        for zone, where in (("HEADER", "config.header_html"), ("NAV", "config.nav_html"),
+                            ("CONTENT", "content.html")):
+            zones[zone] = embed.html(zones[zone], where)
+        zones["EXTRA_CSS"] = embed.css(zones["EXTRA_CSS"], "subject_css.css")
+        # HTML fields of the data arrays are inserted with innerHTML at runtime
+        for name, fields in (("mcqData", ("exp",)), ("termLexicon", ("parts",))):
+            for i, item in enumerate(data.get(name, [])):
+                for field in fields:
+                    if isinstance(item.get(field), str):
+                        item[field] = embed.html(item[field], f"{name}[{i}].{field}")
+        if embed.errors:
+            raise BuildError("\n".join(embed.errors))
     for name in DATA_ARRAYS:
         zones["DATA:" + name] = f"const {name} = {js_literal(data.get(name, []))};"
 
@@ -333,7 +432,11 @@ def build_many(subjects, validate=False, strict=False):
             print(f"BUILD FAILED  {label}\n  " + str(e).replace("\n", "\n  "), flush=True)
             failed.append(label)
             continue
-        print(f"BUILD OK      {label} -> {os.path.basename(out)}", flush=True)
+        size = os.path.getsize(out)
+        print(f"BUILD OK      {label} -> {os.path.basename(out)} ({human_size(size)})", flush=True)
+        if size > LARGE_GUIDE_BYTES:
+            print(f"  warning: the guide is {human_size(size)}; phones open files this large slowly "
+                  "(shrink or compress the images, e.g. JPEG or WebP for photos and slides)", flush=True)
         if validate:
             r = subprocess.run([sys.executable, os.path.join(HERE, "validate_guide.py"), out]
                                + (["--strict"] if strict else []))

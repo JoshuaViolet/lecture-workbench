@@ -40,6 +40,21 @@
 </article>
 ```
 
+## 图片
+
+图片放在科目文件夹的 `assets/` 下，用相对路径引用。构建时会把它们以 `data:` URI 嵌进页面，生成的 HTML 单独复制、发送也能显示图片；引用的文件不存在时构建失败并列出全部缺失项。网络图片（`https://…`）不会被下载嵌入，验证器会报「离线时打不开」，请先保存到 `assets/`。
+
+```html
+<figure class="slide-fig">
+    <img src="assets/lecture3-s12.png" alt="描述图里画了什么，供读屏和图片加载失败时使用" loading="lazy">
+    <figcaption>Lecture 3, S12：说明这张图要看什么。</figcaption>
+</figure>
+```
+
+- `figure` 里的图片可以点击（或用键盘 Enter）放大，说明文字显示在大图下方。
+- 幻灯片截图用 JPEG 或 WebP、宽度 1600px 左右即可；页面超过 25 MB 时构建会提示手机打开会慢。
+- 确实想让图片留在页面外（例如几百张大图），在 `config.json` 里写 `"embed_images": false`；这样页面就不再是单个文件，必须和 `assets/` 一起分发，验证器会给出提醒。
+
 ## 主题、打印与兼容
 
 - 复用框架现有颜色变量；无需科目 CSS、JS、新配置或新数据字段。
