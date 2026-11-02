@@ -95,3 +95,73 @@ def test_letter_references_in_explanations_warn_unless_order_is_fixed(make_subje
     assert "Q1, Q2, Q3" in out and "Q4" not in out and "Q5" not in out
     code, _ = lint(make_subject, mcq, "--strict", name="strict")
     assert code == 1
+
+
+def test_anything_loaded_from_the_network_is_a_warning(make_subject):
+    content = ('<section id="s"><p><a href="https://example.com/reading">a link is fine</a></p>'
+               '<p><img src="https://example.com/slide.png" alt=""></p>'
+               '<script src="https://cdn.example.com/mathjax.js"></script>'
+               '<div style="background: url(//cdn.example.com/bg.png)"></div></section>')
+    guide = build_guide.build(str(make_subject(content=content)))
+    code, out = validate(guide)
+    assert code == 0 and "! loads 3 resource(s) from the network, which will not show offline" in out
+    for url in ("https://example.com/slide.png", "https://cdn.example.com/mathjax.js", "//cdn.example.com/bg.png"):
+        assert url in out
+    assert "example.com/reading" not in out and "VALIDATE OK with 1 warning(s)" in out
+    assert validate(guide, "--strict")[0] == 0     # --strict is about teaching quality
+
+
+def test_files_beside_the_guide_warn_and_missing_ones_fail(make_subject):
+    subject = make_subject(config={"embed_images": False})
+    code, out = validate(build_guide.build(str(subject)))
+    assert code == 0 and "! not a single file: keep 1 file(s) next to the guide: assets/trace-42.svg" in out
+    assert "✓ loads nothing from the network" in out
+    os.remove(subject / "assets" / "trace-42.svg")
+    code, out = validate(str(subject / "Binary_Search_Demo.html"))
+    assert code == 1 and "missing: assets/trace-42.svg" in out
+
+
+def test_the_demo_guide_embeds_its_figure(demo_guide):
+    code, out = validate(demo_guide)
+    assert code == 0 and "✓ files it points to exist  (1 embedded)" in out and "not a single file" not in out
+
+
+def test_money_and_code_are_not_mistaken_for_latex(make_subject):
+    content = ('<section id="s"><p>The price rose from $5 to $10, and revenue was $1,000 against a $800 cost;'
+               ' a range of $5-$10, or 价格从$5涨到$10。</p>'
+               '<pre><code>mean(df$age + df$height)\necho "$HOME/$USER"</code></pre></section>')
+    data = {"termLexicon": LEXICON, "mcqData": [
+        {"q": "A ticket costs $5 and a meal $12. Which is cheaper?", "opts": ["the ticket", "the meal"],
+         "ans": 0, "exp": "$5 is less than $12; in R, <code>df$price</code> holds them."},
+        {"q": "What prints?", "code": "cat(df$a$b)", "opts": ["x$a$\n1", "2"], "ans": 1, "exp": "e"}]}
+    code, out = validate(build_guide.build(str(make_subject(content=content, data=data))))
+    assert code == 0, out
+
+
+def test_raw_latex_in_prose_or_data_fails(make_subject):
+    content = '<section id="s"><p>The multiplier is $\\frac{1}{1-c}$, so $Y = C + I$.</p></section>'
+    code, out = validate(build_guide.build(str(make_subject(content=content))))
+    assert code == 1 and "✗ no raw LaTeX in visible text" in out and "$Y = C + I$" in out
+    data = {"termLexicon": LEXICON, "flashcards": [{"front": "Define $x^2$", "back": "$$a + b$$"}]}
+    code, out = validate(build_guide.build(str(make_subject(name="data", data=data))))
+    assert code == 1 and "✗ no raw LaTeX in data" in out and "$x^2$" in out
+
+
+def test_without_node_the_node_checks_are_skipped_not_crashed(demo_guide):
+    env = dict(os.environ, PATH=os.pathsep.join(p for p in os.environ["PATH"].split(os.pathsep)
+                                                  if not os.path.exists(os.path.join(p, "node"))))
+    r = subprocess.run([sys.executable, VALIDATE, demo_guide], capture_output=True, text=True, env=env)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "VALIDATE OK with 2 check(s) skipped: Node.js not found" in r.stdout and "Traceback" not in r.stderr
+
+
+def test_single_quoted_ids_and_anchors_are_checked(make_subject):
+    content = "<section id='s'><p><a href='#s'>top</a> <a href='#nowhere'>x</a></p></section>"
+    code, out = validate(build_guide.build(str(make_subject(content=content))))
+    assert code == 1 and "['nowhere']" in out
+
+
+def test_unknown_options_and_missing_files_are_reported(demo_guide, tmp_path):
+    assert validate(demo_guide, "--strcit")[0] == 2
+    code, out = validate(str(tmp_path / "nope.html"))
+    assert code == 1 and "cannot read" in out and "Traceback" not in out

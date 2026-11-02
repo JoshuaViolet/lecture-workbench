@@ -32,37 +32,42 @@ function handleSelection() {
 
 function handleDocClick(e) {
     const toolbar = document.getElementById("text-selection-toolbar");
-    const noteTarget = e.target.closest("[data-note-id]");
-    const hlEl = e.target.closest(".user-hl");
-
-    // Clicking a note anchor/flag opens its editor popover
-    if (noteTarget) {
-        toolbar.style.display = "none";
-        activeHighlightEl = null;
-        openExistingNote(noteTarget.dataset.noteId);
-        return;
-    }
-    // Clicking outside the editor (and not on the toolbar that opened it) closes it
-    if (!e.target.closest("#note-editor") && !e.target.closest("#text-selection-toolbar")) {
-        closeNoteEditor();
-    }
     // Clicking outside the term card (and not on a lexicon term) closes it
-    if (!e.target.closest("#term-card") && !e.target.closest("span.en") && !e.target.closest("strong.lexi")) {
+    if (!e.target.closest("#term-card") && !e.target.closest(".lexi")) {
         hideTermCard();
     }
+    if (e.target.closest("#note-editor") || e.target.closest("#text-selection-toolbar")) return;
 
-    if (hlEl) {
-        activeHighlightEl = hlEl;
-        const rect = hlEl.getBoundingClientRect();
-        document.getElementById("add-hl-btn").style.display = "none";
-        document.getElementById("remove-hl-btn").style.display = "inline-flex";
-        positionToolbar(toolbar, rect);
-    } else if (!e.target.closest("#text-selection-toolbar")) {
-        if (!window.getSelection() || window.getSelection().isCollapsed) {
-            toolbar.style.display = "none";
-            activeHighlightEl = null;
-        }
+    // Any other click ends an open note editor; what was typed into it is kept, not thrown away
+    dismissNoteEditor();
+
+    // The 💬 flag always opens its note. Highlighted text shows the highlight toolbar even
+    // inside a note, so the highlight can still be removed; other noted text opens the note.
+    const flag = e.target.closest(".note-flag");
+    const hlEl = e.target.closest(".user-hl");
+    const noteAnchor = e.target.closest(".note-anchor");
+    if (flag || (noteAnchor && !hlEl)) {
+        toolbar.style.display = "none";
+        activeHighlightEl = null;
+        openExistingNote((flag || noteAnchor).dataset.noteId);
+    } else if (hlEl) {
+        showHighlightToolbar(hlEl);
+    } else if (!window.getSelection() || window.getSelection().isCollapsed) {
+        toolbar.style.display = "none";
+        activeHighlightEl = null;
     }
+}
+
+// The toolbar for an existing highlight: remove it, or add a note to exactly its text.
+function showHighlightToolbar(hlEl) {
+    const pieces = document.querySelectorAll("mark.user-hl" + byId("data-hl-id", hlEl.dataset.hlId));
+    activeHighlightEl = hlEl;
+    selectedRange = document.createRange();
+    selectedRange.setStartBefore(pieces[0]);
+    selectedRange.setEndAfter(pieces[pieces.length - 1]);
+    document.getElementById("add-hl-btn").style.display = "none";
+    document.getElementById("remove-hl-btn").style.display = "inline-flex";
+    positionToolbar(document.getElementById("text-selection-toolbar"), hlEl.getBoundingClientRect());
 }
 
 function positionToolbar(toolbar, rect) {
@@ -79,6 +84,7 @@ function clearSelectionUI() {
     if (sel) sel.removeAllRanges();
     document.getElementById("text-selection-toolbar").style.display = "none";
     selectedRange = null;
+    activeHighlightEl = null;
 }
 
 // ---------- highlights ----------
@@ -104,9 +110,8 @@ function applyHighlight() {
         showToast(UI.toast_hl_nothing);
         return;
     }
-    const saved = readList(LS.highlights);
-    saved.push(Object.assign({ id: id }, res.anchor));
-    if (writeList(LS.highlights, saved)) {
+    const record = Object.assign({ id: id }, res.anchor, { ts: Date.now() });
+    if (changeList(LS.highlights, list => list.concat([record]))) {
         showToast(res.clipped ? UI.toast_hl_clipped : UI.toast_hl_saved);
     }
 }
@@ -115,12 +120,12 @@ function removeHighlightAtSelection() {
     if (!activeHighlightEl) return;
     const id = activeHighlightEl.dataset.hlId;
     unwrapAll("mark.user-hl" + byId("data-hl-id", id));
-    writeList(LS.highlights, readList(LS.highlights).filter(h => h.id !== id));
-    document.getElementById("text-selection-toolbar").style.display = "none";
-    activeHighlightEl = null;
-    showToast(UI.toast_hl_removed);
+    clearSelectionUI();
+    if (changeList(LS.highlights, list => list.filter(h => h.id !== id))) {
+        showToast(UI.toast_hl_removed);
+    }
 }
 
 function restoreHighlights() {
-    restoreAnnotations(readList(LS.highlights), "data-hl-id", wrapHighlight);
+    restoreAnnotations(loadList(LS.highlights), "data-hl-id", wrapHighlight);
 }

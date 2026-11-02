@@ -11,6 +11,7 @@ psycDict) is reported and dropped. data.js itself is left in place.
 """
 import json
 import os
+import shutil
 import subprocess
 import sys
 
@@ -38,7 +39,11 @@ def main(argv):
     if os.path.exists(dst):
         print(f"{dst} already exists; remove it first if you want to regenerate it")
         return 1
-    r = subprocess.run(["node", "-e", NODE_SCRIPT, src], capture_output=True, text=True)
+    node = shutil.which("node")
+    if not node:
+        print("data.js is JavaScript, so converting it needs Node.js: install it from https://nodejs.org")
+        return 1
+    r = subprocess.run([node, "-e", NODE_SCRIPT, src], capture_output=True, text=True)
     if r.returncode != 0:
         print("could not evaluate data.js with node:\n" + r.stderr.strip())
         return 1

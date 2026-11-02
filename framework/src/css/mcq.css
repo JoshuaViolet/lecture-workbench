@@ -3,6 +3,29 @@
     margin-top: 24px;
 }
 
+.mcq-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.mcq-toolbar:not(:empty) {
+    margin-bottom: 16px;
+}
+
+/* answered wrongly the last time */
+.mcq-badge {
+    display: inline-block;
+    margin-bottom: 8px;
+    padding: 1px 9px;
+    border: 1px solid var(--danger);
+    border-radius: 999px;
+    background: var(--danger-bg);
+    color: var(--danger);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+[data-theme="dark"] .mcq-badge { color: #fecaca; }
+
 .mcq-card {
     background: var(--bg-page);
     border: 1px solid var(--border);

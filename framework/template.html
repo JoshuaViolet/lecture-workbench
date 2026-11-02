@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{TITLE}}</title>
+    <script>
+        // Set the theme before anything is drawn: the reader's own choice (the key is LS.theme
+        // below), else the system's light or dark setting. The main script, which also follows
+        // the system when that setting changes, runs at the end of <body>: too late to avoid a
+        // white flash.
+        (function () {
+            var theme = null;
+            try { theme = localStorage.getItem({{DOC_ID_JSON}} + "_theme"); } catch (e) { /* storage blocked */ }
+            if (theme !== "dark" && theme !== "light") {
+                theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
     <style>
         /* @@INCLUDE:css/base.css@@ */
 
@@ -51,7 +65,7 @@
         <div class="note-editor-btns">
             <button class="hl-action-btn" id="note-delete-btn" onclick="deleteNote()" style="display:none; color: #f87171;">{{UI:note_delete}}</button>
             <button class="hl-action-btn" onclick="closeNoteEditor()">{{UI:note_cancel}}</button>
-            <button class="hl-action-btn" onclick="saveNote()" style="color: #4ade80;">{{UI:note_save}}</button>
+            <button class="hl-action-btn" onclick="saveNote()" style="color: #4ade80;" title="{{UI:note_save_title}}">{{UI:note_save}}</button>
         </div>
     </div>
 
@@ -84,7 +98,11 @@
             <h2>
                 <span>{{SIDEBAR_TITLE}}</span>
                 <div style="display: flex; gap: 6px; align-items: center;">
-                    <button class="theme-btn" onclick="toggleTheme()" id="theme-toggle-btn">{{UI:theme_dark}}</button>
+                    <select class="theme-btn" id="theme-select" onchange="setThemeChoice(this.value)" title="{{UI:theme_title}}" aria-label="{{UI:theme_title}}">
+                        <option value="system">{{UI:theme_system}}</option>
+                        <option value="light">{{UI:theme_light}}</option>
+                        <option value="dark">{{UI:theme_dark}}</option>
+                    </select>
                     <button class="sidebar-collapse-btn" onclick="toggleSidebar(false)" title="{{UI:sidebar_collapse_title}}">◀</button>
                 </div>
             </h2>
@@ -92,7 +110,7 @@
         </div>
 
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="{{SEARCH_PLACEHOLDER}}" onkeyup="filterContent()">
+            <input type="text" id="searchInput" placeholder="{{SEARCH_PLACEHOLDER}}" oninput="filterContent()">
         </div>
 
         <nav>
@@ -117,7 +135,19 @@
         <!-- @@ZONE:HEADER@@ --><!-- @@ZONE:CONTENT@@ --></main>
 
     <!-- Toast Notification -->
-    <div id="toast-msg"></div>
+    <div id="toast-msg" role="status" aria-live="polite"></div>
+
+    <!-- Import Dialog: merge a backup into what this browser has, or replace it -->
+    <dialog id="import-dialog" aria-labelledby="import-dialog-title">
+        <h3 id="import-dialog-title">{{UI:import}}</h3>
+        <p id="import-dialog-summary"></p>
+        <p id="import-dialog-warning"></p>
+        <div class="import-dialog-btns">
+            <button class="fc-btn" onclick="finishImport('merge')">{{UI:import_merge}}</button>
+            <button class="fc-btn fc-btn-sec import-replace" onclick="finishImport('replace')">{{UI:import_replace}}</button>
+            <button class="fc-btn fc-btn-sec" onclick="finishImport('cancel')">{{UI:import_cancel}}</button>
+        </div>
+    </dialog>
 
     <!-- Lightbox Modal -->
     <div id="lightbox-modal" onclick="closeLightbox(event)">
@@ -145,7 +175,8 @@
             theme: DOC_ID + "_theme",
             sidebar: DOC_ID + "_sidebar_collapsed",
             highlights: DOC_ID + "_study_highlights_v4",
-            notes: DOC_ID + "_study_notes_v1"
+            notes: DOC_ID + "_study_notes_v1",
+            mcq: DOC_ID + "_mcq_results_v1"
         };
 
         // @@INCLUDE:js/page-ui.js@@

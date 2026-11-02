@@ -21,6 +21,13 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
+#lightbox-img.is-vector {
+    width: 90vw;
+    height: 80vh;
+    object-fit: contain;
+    box-shadow: none;
+}
+
 #lightbox-caption {
     color: #ffffff;
     margin-top: 14px;

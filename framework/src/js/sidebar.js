@@ -47,11 +47,14 @@ document.querySelectorAll("#navList a").forEach(link => {
     });
 });
 
-// Keyboard Shortcut '[' or ']' to toggle sidebar
+// Keyboard Shortcut '[' or ']' to toggle sidebar, but not while typing, and not Ctrl/⌘+[
+// (browser shortcuts such as Back on macOS)
 document.addEventListener("keydown", function(e) {
-    if ((e.key === "[" || e.key === "]") && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") {
-        toggleSidebar();
-    }
+    if (e.key !== "[" && e.key !== "]") return;
+    if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+    const t = e.target;
+    if (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName)) return;
+    toggleSidebar();
 });
 
 // Restore sidebar state from localStorage
