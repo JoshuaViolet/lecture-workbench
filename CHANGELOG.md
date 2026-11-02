@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.1
 
 ### Added
 - The Release workflow can be started from the Actions page (**Run workflow** on `main`, with the version), so a release needs no git and can be made from a phone. It tags the head of `main` and publishes that version's changelog section.
