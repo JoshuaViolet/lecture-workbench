@@ -4,7 +4,7 @@
 
 [在线示例](https://joshuaviolet.github.io/lecture-workbench/) · [架构说明（英文）](docs/architecture.md) · [English README](README.md)
 
-> 状态：**v0.2，早期版本**。最初是我为自己的大学课程写的工具，现在整理成可复用的框架。页面界面支持简体中文（默认）和英文。未解决的问题见 [KNOWN_ISSUES.md](KNOWN_ISSUES.md)。
+> 状态：**v0.3，早期版本**。最初是我为自己的大学课程写的工具，现在整理成可复用的框架。页面界面支持简体中文（默认）和英文。未解决的问题见 [KNOWN_ISSUES.md](KNOWN_ISSUES.md)。
 
 ## 功能
 
@@ -65,6 +65,8 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/python -m playwright install chromium   # 或设置 PW_CHANNEL=chrome 使用已安装的 Chrome
 .venv/bin/pytest
 ```
+
+发版：先开一个 PR，把 [CHANGELOG.md](CHANGELOG.md) 里的 `## Unreleased` 改成新版本号（如 `## 0.4.0`），并更新两份 README 的状态行；合并后给合并提交打标签并推送（`git tag v0.4.0 <合并提交> && git push origin v0.4.0`）。Release workflow 会自动发布 GitHub Release，说明就是 CHANGELOG 里该版本那一节；CHANGELOG 里没有对应版本的标签不会发布任何东西。
 
 ## 许可证
 
