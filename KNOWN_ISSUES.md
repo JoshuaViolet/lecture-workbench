@@ -19,5 +19,5 @@ Fixed issues are recorded in [CHANGELOG.md](CHANGELOG.md). This file lists what 
 
 | Next | Goal |
 |---|---|
-| 0.3 | Publish the CLI as a package |
+| 0.4 | Publish the CLI as a package |
 | later | Optional, pluggable study assistant (OpenAI-compatible endpoint or a local model), off by default so the offline core stays dependency-free |

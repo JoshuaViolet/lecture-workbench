@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
 
 ### Added
 - Local images are embedded in the built page as `data:` URIs, so a guide with figures is still one file that works when copied on its own. A missing image fails the build; `"embed_images": false` keeps the links. The build reports each guide's size and warns above 25 MB.
@@ -10,6 +10,7 @@
 - The contents list marks the section being read.
 - `cli.py new --lang en` writes an English starter subject.
 - Ctrl/⌘+Enter saves a note.
+- Pushing a `v*` tag publishes a GitHub release whose notes are that version's section of this changelog.
 
 ### Changed
 - Importing a backup asks whether to **merge** it with what the browser already has (nothing is deleted, the newer edit of a note wins, and the page says when a backup holds nothing new) or **replace** it, showing how many highlights and notes each side has. A browser with nothing yet is not asked. Replacing keeps one copy of what it replaced under `<key>_before_import`. A backup from another guide is flagged in the same dialog instead of a separate confirm.
@@ -18,7 +19,7 @@
 - Reading a term aloud picks an installed English voice (Australian first, as before) instead of leaving a non-English default voice to read it.
 - The Markdown export lists notes and highlights in reading order and dates them in the guide's language.
 - Without Node.js, the validator skips its two Node checks and says so, instead of crashing.
-- CI and the Pages deploy use Node 24 (Node 20 is past end of life).
+- CI and the Pages deploy use Node 24 (Node 20 is past end of life). CI's Python 3.9 job runs on Ubuntu 24.04, because `ubuntu-latest` is now Ubuntu 26.04, which has no Python 3.9.
 
 ### Fixed
 - Importing a backup erased the annotations already in the browser, without asking.
@@ -33,6 +34,11 @@
 - Printed highlights kept their background instead of turning into underlines.
 - A config value containing `{{TITLE}}` or another placeholder name failed the build.
 - ids and anchors in single quotes were not checked; mistyped options were silently ignored.
+
+### Upgrading
+- Rebuild your subjects. They build unchanged, except that every image `content.html` refers to is now embedded: built guides get bigger, and a missing image fails the build instead of showing up broken. Add `"embed_images": false` to `config.json` to keep the old links.
+- A guide that loads something from the network (a CDN script, a web font, a hotlinked image) now gets a validator warning. It is not a failure, also with `--strict`.
+- Students keep everything: highlights, notes and the theme use the same storage keys as before. A student who never chose a theme now follows the system; one who chose light or dark keeps that choice.
 
 ## 0.2.1
 

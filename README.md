@@ -9,7 +9,7 @@ Turn lecture notes into a **single, self-contained HTML study guide** that works
 
 ![A demo guide with a highlight across bold text, a margin note and a term card](docs/screenshot.png)
 
-> Status: **v0.2, early**. I built this for my own university courses and extracted it into a reusable tool. The page interface comes in Simplified Chinese (default) or English. Open problems are listed in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+> Status: **v0.3, early**. I built this for my own university courses and extracted it into a reusable tool. The page interface comes in Simplified Chinese (default) or English. Open problems are listed in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## Features
 
@@ -137,6 +137,17 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 ```
 
 The suite has unit tests for the builder and validator, and Playwright tests that open the built demo from `file://` and drive it like a student: select text, click the toolbar, reload, work in two tabs, export a backup and merge it into or replace another browser's annotations, answer questions and come back, open the guide copied on its own.
+
+### Releasing
+
+1. Open a pull request that renames `## Unreleased` in [CHANGELOG.md](CHANGELOG.md) to the new version (`## 0.4.0`) and updates the status line in both READMEs.
+2. Once it is merged, tag the merge commit and push the tag:
+
+   ```bash
+   git tag v0.4.0 <merge commit> && git push origin v0.4.0
+   ```
+
+   The Release workflow publishes a GitHub release with that version's changelog section as its notes. A tag whose version has no section in the changelog publishes nothing.
 
 ## License
 
