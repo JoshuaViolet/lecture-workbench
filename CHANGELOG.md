@@ -1,5 +1,39 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Local images are embedded in the built page as `data:` URIs, so a guide with figures is still one file that works when copied on its own. A missing image fails the build; `"embed_images": false` keeps the links. The build reports each guide's size and warns above 25 MB.
+- An offline section in the validator: anything the page would load from the network (CDN script, web font, hotlinked image, iframe) fails, local files it points to must exist, and a guide that needs files beside it gets a warning.
+- Figure images open full size in the lightbox (click or Enter). The demo has a figure of its search trace.
+- Each question's last result is remembered in the browser; questions answered wrongly last time carry a badge, and a button narrows practice to them.
+- The contents list marks the section being read.
+- `cli.py new --lang en` writes an English starter subject.
+- Ctrl/⌘+Enter saves a note.
+
+### Changed
+- Importing a backup merges it with what the browser already has instead of replacing it; the newer edit of a note wins, and the page says when a backup holds nothing new.
+- Dark mode follows the system setting until the reader picks a theme, and is applied before the first paint.
+- On phones, tables scroll sideways inside their own box and the page uses less padding.
+- Reading a term aloud picks an installed English voice (Australian first, as before) instead of leaving a non-English default voice to read it.
+- The Markdown export lists notes and highlights in reading order and dates them in the guide's language.
+- Without Node.js, the validator skips its two Node checks and says so, instead of crashing.
+- CI and the Pages deploy use Node 24 (Node 20 is past end of life).
+
+### Fixed
+- Importing a backup erased the annotations already in the browser.
+- With the guide open in two tabs, saving a note in one erased notes saved in the other.
+- Clicking outside the note editor threw away what had been typed.
+- When storage writes failed, the export the message recommended contained nothing.
+- A highlight inside a note could not be removed, and the toolbar's note button could annotate an earlier, abandoned selection.
+- The validator took money ("$5 to $10") and code (R's `df$col`, `$HOME`) for raw LaTeX, failing economics and data-science guides; it missed `$x^2$` in the data.
+- A term card showed "undefined" for a term without an etymology, and empty rows for other missing fields.
+- Ctrl/⌘+[ (Back in macOS browsers) toggled the sidebar.
+- Pasting into the contents filter did not filter.
+- Printed highlights kept their background instead of turning into underlines.
+- A config value containing `{{TITLE}}` or another placeholder name failed the build.
+- ids and anchors in single quotes were not checked; mistyped options were silently ignored.
+
 ## 0.2.1
 
 ### Added
