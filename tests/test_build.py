@@ -38,7 +38,8 @@ def test_data_strings_cannot_close_the_script_element(make_subject):
     data = {"flashcards": [{"front": "</script><b>x</b>", "back": "<!-- c -->"}]}
     out = built(build_guide.build(str(make_subject(data=data))))
     scripts = re.findall(r"<script>(.*?)</script>", out, re.S)
-    assert len(scripts) == 1 and "<\\/script>" in scripts[0]
+    # the template's two scripts (theme in <head>, engine at the end of <body>), and no more
+    assert len(scripts) == 2 and "<\\/script>" in scripts[1]
 
 
 def test_content_text_is_never_treated_as_a_marker(make_subject):

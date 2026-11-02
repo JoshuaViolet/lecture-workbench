@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 import pytest
 
@@ -105,3 +106,17 @@ def test_build_strict_turns_lint_warnings_into_failures(make_subject):
     subject = str(make_subject(data={"mcqData": mcq, "termLexicon": lexicon}))
     assert cli.main(["build", subject, "--validate"]) == 0
     assert cli.main(["build", subject, "--validate", "--strict"]) == 1
+
+
+def test_new_with_lang_en_writes_an_english_subject(tmp_path):
+    subject = tmp_path / "week-2"
+    assert cli.main(["new", str(subject), "--lang", "en"]) == 0
+    assert json.loads((subject / "config.json").read_text(encoding="utf-8"))["lang"] == "en"
+    for name in ("config.json", "content.html", "data.json"):
+        assert not re.search(r"[一-鿿]", (subject / name).read_text(encoding="utf-8")), name
+    assert cli.main(["build", str(subject), "--validate", "--strict"]) == 0
+
+
+def test_new_rejects_an_unknown_language(tmp_path, capsys):
+    assert cli.main(["new", str(tmp_path / "lecture"), "--lang", "fr"]) == 1
+    assert "config.lang 'fr' is not supported" in capsys.readouterr().out

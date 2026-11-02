@@ -20,8 +20,8 @@ function toggleTheme() {
         lsSet(LS.theme, "dark");
     }
 }
-if (lsGet(LS.theme) === "dark") {
-    document.documentElement.setAttribute("data-theme", "dark");
+// the theme itself was set in <head>; the button offers the other one
+if (document.documentElement.getAttribute("data-theme") === "dark") {
     document.getElementById("theme-toggle-btn").textContent = UI.theme_light;
 }
 
@@ -54,6 +54,65 @@ document.addEventListener("keydown", function(e) {
         hideTermCard();
     }
 });
+
+// Tables keep their columns readable on a phone: they scroll sideways inside their own box
+// instead of squeezing every column or running out of the page.
+function wrapTables() {
+    document.querySelectorAll("#main-content table").forEach(table => {
+        if (table.parentElement.classList.contains("table-scroll")) return;
+        const box = document.createElement("div");
+        box.className = "table-scroll";
+        table.parentNode.insertBefore(box, table);
+        box.appendChild(table);
+    });
+}
+
+// Contents: mark the entry of the section being read (the last target whose top has passed
+// the upper third of the window), and keep it in view in a long sidebar.
+let navTargets = [];
+function initScrollSpy() {
+    navTargets = [];
+    document.querySelectorAll('#navList a[href^="#"]').forEach(a => {
+        let id = a.getAttribute("href").slice(1);
+        try { id = decodeURIComponent(id); } catch (e) { /* use it as written */ }
+        const target = id && document.getElementById(id);
+        if (target) navTargets.push({ target: target, link: a });
+    });
+    navTargets.sort((x, y) => (x.target.compareDocumentPosition(y.target) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    if (!navTargets.length) return;
+    let queued = false;
+    window.addEventListener("scroll", () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(() => { queued = false; updateActiveNav(); });
+    }, { passive: true });
+    updateActiveNav();
+}
+function updateActiveNav() {
+    const line = window.innerHeight / 3;
+    let current = null;
+    for (const nt of navTargets) {
+        if (nt.target.getBoundingClientRect().top <= line) current = nt.link;
+        else break;
+    }
+    // at the very bottom, the last section is the one being read even if it is short
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+        current = navTargets[navTargets.length - 1].link;
+    }
+    navTargets.forEach(nt => {
+        const on = nt.link === current;
+        if (on === nt.link.classList.contains("active")) return;
+        nt.link.classList.toggle("active", on);
+        if (on) {
+            nt.link.setAttribute("aria-current", "location");
+            const sb = document.getElementById("sidebar");
+            const r = nt.link.getBoundingClientRect(), s = sb.getBoundingClientRect();
+            if (r.top < s.top || r.bottom > s.bottom) sb.scrollTop += r.top - s.top - s.height / 3;
+        } else {
+            nt.link.removeAttribute("aria-current");
+        }
+    });
+}
 
 // Search Filter
 function filterContent() {

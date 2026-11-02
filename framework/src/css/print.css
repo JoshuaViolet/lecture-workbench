@@ -31,6 +31,7 @@
         padding: 0 !important;
     }
     figure, table, .quiz-card, pre.diagram, .print-only li { break-inside: avoid; }
+    .table-scroll { overflow: visible; }
     h2, h3 { break-after: avoid; }
     img { max-width: 100% !important; }
     .mcq-code { white-space: pre-wrap; overflow: visible; }

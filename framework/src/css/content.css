@@ -188,7 +188,15 @@ p {
     gap: 6px;
 }
 
-/* Tables */
+/* Tables (each is wrapped in a .table-scroll box at start-up) */
+.table-scroll {
+    overflow-x: auto;
+    margin: 24px 0;
+}
+.table-scroll > table {
+    margin: 0;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;

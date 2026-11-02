@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{TITLE}}</title>
+    <script>
+        // Set the theme before anything is drawn: the reader's saved choice, else the system's.
+        // (The main script runs at the end of <body>, too late to avoid a white flash.)
+        (function () {
+            var theme = null;
+            try { theme = localStorage.getItem({{DOC_ID_JSON}} + "_theme"); } catch (e) { /* storage blocked */ }
+            if (theme !== "dark" && theme !== "light") {
+                theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
     <style>
         /* @@INCLUDE:css/base.css@@ */
 
@@ -145,7 +157,8 @@
             theme: DOC_ID + "_theme",
             sidebar: DOC_ID + "_sidebar_collapsed",
             highlights: DOC_ID + "_study_highlights_v4",
-            notes: DOC_ID + "_study_notes_v1"
+            notes: DOC_ID + "_study_notes_v1",
+            mcq: DOC_ID + "_mcq_results_v1"
         };
 
         // @@INCLUDE:js/page-ui.js@@

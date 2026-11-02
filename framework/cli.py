@@ -3,7 +3,7 @@
 cli.py: one entry point for scaffolding, building and checking study guides.
 
 Usage:
-    python3 framework/cli.py new <subject_dir> [--title T] [--doc-id ID] [--output NAME.html]
+    python3 framework/cli.py new <subject_dir> [--title T] [--doc-id ID] [--output NAME.html] [--lang zh|en]
     python3 framework/cli.py build (<subject_dir>... | --all) [--validate] [--strict]
     python3 framework/cli.py validate (<subject_dir> | <guide.html>) [--strict]
 
@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_guide  # noqa: E402
 import validate_guide  # noqa: E402
 
-CONTENT_TEMPLATE = """\
+CONTENT_ZH = """\
 <!-- The lesson body: one <section> per chapter. Each section id needs a matching link in
      config.json nav_html. Teaching components to copy from: examples/teaching-components.html -->
 <section id="intro">
@@ -47,11 +47,11 @@ CONTENT_TEMPLATE = """\
 </section>
 """
 
-NAV_HTML = ('<li><a href="#intro">1.0 本讲主线</a></li>\n'
-            '<li><a href="#flashcards">1.1 抽认卡</a></li>\n'
-            '<li><a href="#practice">1.2 选择题</a></li>\n')
+NAV_ZH = ('<li><a href="#intro">1.0 本讲主线</a></li>\n'
+          '<li><a href="#flashcards">1.1 抽认卡</a></li>\n'
+          '<li><a href="#practice">1.2 选择题</a></li>\n')
 
-STARTER_DATA = {
+DATA_ZH = {
     "flashcards": [{"front": "示例问题：这一讲要解释的机制是什么？", "back": "用自己的话写出答案。"}],
     "mcqData": [{"q": "示例题：ans 字段表示什么？",
                  "opts": ["正确选项在 opts 中的下标（从 0 开始）", "正确选项的文字",
@@ -62,12 +62,56 @@ STARTER_DATA = {
                      "parts": "替换成词源或构词拆解。", "hook": "替换成一句记忆提示。"}],
 }
 
+CONTENT_EN = """\
+<!-- The lesson body: one <section> per chapter. Each section id needs a matching link in
+     config.json nav_html. Teaching components to copy from: examples/teaching-components.html -->
+<section id="intro">
+<h2 class="chapter-title">1.0 The main line of this lecture</h2>
+<p>Write the lesson here. Write a term as <span class="term"><span class="en">Example term</span></span>; hovering over it shows its card from termLexicon in data.json.</p>
+</section>
+
+<!-- Flashcards come from data.json flashcards. Delete this section if the guide has none. -->
+<section id="flashcards">
+<h2 class="chapter-title">1.1 Flashcards</h2>
+<div class="flashcard-wrapper">
+<div class="flashcard" id="flashcard-element" onclick="flipCard()" tabindex="0" role="button" aria-label="Flip the flashcard"><div class="flashcard-type" id="fc-type"></div><div class="flashcard-text" id="fc-front"></div><div class="flashcard-sub" id="fc-sub"></div></div>
+<div class="flashcard-controls"><button class="fc-btn fc-btn-sec" onclick="prevCard()">Previous</button><span id="fc-counter"></span><button class="fc-btn fc-btn-sec" onclick="nextCard()">Next</button><button class="fc-btn fc-btn-sec" onclick="shuffleCards()">Random</button></div>
+</div>
+</section>
+
+<!-- Questions come from data.json mcqData. Delete this section if the guide has none. -->
+<section id="practice">
+<h2 class="chapter-title">1.2 Multiple-choice questions</h2>
+<p>Answered <b id="mcq-done">0</b>, correct <b id="mcq-score">0</b>. <button class="fc-btn fc-btn-sec" onclick="resetMCQ()">Start again</button></p>
+<div id="mcq-app" class="mcq-container"></div>
+</section>
+"""
+
+NAV_EN = ('<li><a href="#intro">1.0 The main line</a></li>\n'
+          '<li><a href="#flashcards">1.1 Flashcards</a></li>\n'
+          '<li><a href="#practice">1.2 Multiple-choice questions</a></li>\n')
+
+DATA_EN = {
+    "flashcards": [{"front": "Example: what mechanism does this lecture explain?", "back": "Answer in your own words."}],
+    "mcqData": [{"q": "Example: what does the ans field hold?",
+                 "opts": ["The 0-based index of the correct option in opts", "The text of the correct option",
+                          "The number of points the question is worth", "The number of options"],
+                 "ans": 0, "exp": "ans is the index of the correct option in opts, counting from 0; the page "
+                                  "shuffles the options every time it renders."}],
+    "termLexicon": [{"keys": ["example term"], "term": "Example term", "ipa": "/ɪɡˈzɑːmpəl tɜːm/",
+                     "chunks": "ex-AM-ple TERM", "parts": "Replace with the etymology or word parts.",
+                     "hook": "Replace with a one-line memory hook."}],
+}
+
+# starter files by interface language; a language without its own starter gets the English one
+SCAFFOLD = {"zh": (CONTENT_ZH, NAV_ZH, DATA_ZH), "en": (CONTENT_EN, NAV_EN, DATA_EN)}
+
 
 def words(name):
     return [w for w in re.split(r"[^A-Za-z0-9]+", name) if w]
 
 
-def new_subject(subject_dir, title=None, doc_id=None, output=None):
+def new_subject(subject_dir, title=None, doc_id=None, output=None, lang=build_guide.DEFAULT_LANG):
     """Create a subject folder that builds and validates as is. Returns the created folder."""
     subject_dir = os.path.abspath(subject_dir)
     if os.path.isdir(subject_dir) and os.listdir(subject_dir):
@@ -85,10 +129,12 @@ def new_subject(subject_dir, title=None, doc_id=None, output=None):
         "app_id": (slug or doc_id.replace("_", "-")) + "-guide",
         "title": title or " ".join(p.capitalize() for p in parts) or doc_id,
         "output": output or "_".join(p.capitalize() for p in parts) + ".html",
+        "lang": lang,
     }
+    content, nav, data = SCAFFOLD.get(lang, SCAFFOLD["en"])
     cfg["header_html"] = f'<header class="doc-header"><h1>{html.escape(cfg["title"])}</h1></header>'
-    cfg["nav_html"] = NAV_HTML
-    errors, _ = build_guide.check_config(cfg)
+    cfg["nav_html"] = nav
+    errors, _ = build_guide.check_config(cfg, tuple(build_guide.load_ui_strings()))
     if errors:
         raise build_guide.BuildError("\n".join(errors))
 
@@ -106,8 +152,8 @@ def new_subject(subject_dir, title=None, doc_id=None, output=None):
 
     os.makedirs(subject_dir, exist_ok=True)
     for name, text in (("config.json", json.dumps(cfg, ensure_ascii=False, indent=2) + "\n"),
-                       ("content.html", CONTENT_TEMPLATE),
-                       ("data.json", json.dumps(STARTER_DATA, ensure_ascii=False, indent=2) + "\n")):
+                       ("content.html", content),
+                       ("data.json", json.dumps(data, ensure_ascii=False, indent=2) + "\n")):
         with open(os.path.join(subject_dir, name), "w", encoding="utf-8") as f:
             f.write(text)
     return subject_dir
@@ -130,7 +176,7 @@ def guide_path(target):
 
 def cmd_new(args):
     try:
-        path = new_subject(args.subject_dir, args.title, args.doc_id, args.output)
+        path = new_subject(args.subject_dir, args.title, args.doc_id, args.output, args.lang)
     except build_guide.BuildError as e:
         print("NEW FAILED\n  " + str(e).replace("\n", "\n  "))
         return 1
@@ -179,6 +225,8 @@ def parser():
     new.add_argument("--title", help="page title (default: from the folder name)")
     new.add_argument("--doc-id", help="storage namespace, unique per guide (default: from the folder name)")
     new.add_argument("--output", help="generated file name (default: from the folder name)")
+    new.add_argument("--lang", default=build_guide.DEFAULT_LANG,
+                     help="language of the page interface and the starter text: zh (default) or en")
     new.set_defaults(func=cmd_new)
 
     build = sub.add_parser("build", help="build subject folders into single-file guides")

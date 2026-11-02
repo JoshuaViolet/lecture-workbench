@@ -171,3 +171,69 @@ def test_highlights_print_as_underlines_in_both_themes(page):
     assert page.evaluate(background) == "rgba(0, 0, 0, 0)"
     page.evaluate("document.documentElement.setAttribute('data-theme', 'dark')")
     assert page.evaluate(background) == "rgba(0, 0, 0, 0)"
+
+
+def test_wrong_answers_are_remembered_for_a_retry(page):
+    answers = page.evaluate("mcqData.map(m => m.ans)")
+    cards = page.locator(".mcq-card")
+    cards.nth(0).locator(f'.mcq-opt[data-opt="{(answers[0] + 1) % 4}"]').click()   # wrong
+    cards.nth(1).locator(f'.mcq-opt[data-opt="{answers[1]}"]').click()             # right
+    assert page.locator("#mcq-only-wrong").inner_text() == "🔁 只练上次答错的 1 题"
+
+    page.reload()
+    assert page.locator(".mcq-badge").count() == 1
+    assert page.locator("#mcq-card-0 .mcq-badge").inner_text() == "上次答错"
+    page.click("#mcq-only-wrong")
+    assert page.locator(".mcq-card").count() == 1 and page.locator("#mcq-card-0").count() == 1
+    assert page.locator("#mcq-only-wrong").get_attribute("aria-pressed") == "true"
+    page.locator(f'#mcq-card-0 .mcq-opt[data-opt="{answers[0]}"]').click()    # right this time
+    assert page.locator(".mcq-card").count() == 1                              # the set stays while practising
+    page.click("#mcq-only-wrong")
+    assert page.locator(".mcq-card").count() == 7 and page.locator("#mcq-only-wrong").count() == 0
+    page.reload()
+    assert page.locator(".mcq-badge").count() == 0
+
+
+def test_remembered_results_follow_the_question_not_its_position(page):
+    answers = page.evaluate("mcqData.map(m => m.ans)")
+    page.locator(f'#mcq-card-0 .mcq-opt[data-opt="{(answers[0] + 1) % 4}"]').click()
+    stem = page.evaluate("mcqData[0].q")
+    page.evaluate("mcqData.reverse(); resetMCQ()")
+    assert page.locator(".mcq-card:has(.mcq-badge) .mcq-q").inner_text() == stem
+    assert page.evaluate("mcqKey({q: 'a'}) !== mcqKey({q: 'a', code: 'x'})")
+
+
+def test_tables_scroll_inside_their_box_on_a_phone(browser, demo_guide):
+    context = browser.new_context(viewport={"width": 360, "height": 740})
+    page = context.new_page()
+    page.goto("file://" + demo_guide)
+    assert page.locator(".table-scroll > table").count() == page.locator("#main-content table").count() == 2
+    assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
+    # a header cell is never narrower than one line of its text
+    assert page.evaluate("[...document.querySelectorAll('#main-content th')].every("
+                         "th => th.getBoundingClientRect().height < 2 * parseFloat(getComputedStyle(th).lineHeight)"
+                         " + 2 * parseFloat(getComputedStyle(th).paddingTop))")
+    context.close()
+
+
+def test_the_contents_mark_the_section_being_read(page):
+    page.evaluate("document.documentElement.style.scrollBehavior = 'auto';"
+                  "document.getElementById('bs-pitfalls').scrollIntoView()")
+    page.wait_for_function("document.querySelector('#navList a.active')")
+    active = page.locator("#navList a.active")
+    assert active.count() == 1 and active.inner_text() == "1.3 前提与边界"
+    assert active.get_attribute("aria-current") == "location"
+    page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+    page.wait_for_function("document.querySelector('#navList a.active').textContent.includes('1.6')")
+
+
+def test_dark_system_preference_is_used_until_the_reader_chooses(browser, demo_guide):
+    context = browser.new_context(color_scheme="dark")
+    page = context.new_page()
+    page.goto("file://" + demo_guide)
+    theme = "document.documentElement.getAttribute('data-theme')"
+    assert page.evaluate(theme) == "dark" and page.inner_text("#theme-toggle-btn") == "☀️ 亮色"
+    page.click("#theme-toggle-btn")
+    page.reload()
+    assert page.evaluate(theme) == "light"
+    context.close()
