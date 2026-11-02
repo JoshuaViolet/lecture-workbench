@@ -121,5 +121,5 @@ def test_english_page_shows_no_chinese_interface_text(english_page):
 
 def test_slots_are_filled_literally(english_page):
     assert english_page.evaluate('t("toast_imported", { highlights: 2, notes: 1 })').startswith(
-        "📥 Imported 2 highlights and 1 notes")
+        "📥 Merged 2 highlights and 1 notes")
     assert english_page.evaluate('t("md_title", { title: "a $& {n} b" })') == "a $& {n} b · My notes and highlights"

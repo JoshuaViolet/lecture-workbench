@@ -4,7 +4,6 @@
     updateFC();
     initMCQ();
     restoreHighlights();
-    loadNotes();
     restoreNotes();
     updateNoteCount();
     initTermCards();
