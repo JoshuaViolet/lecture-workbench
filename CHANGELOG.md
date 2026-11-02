@@ -4,12 +4,25 @@
 
 ### Added
 - The Release workflow can be started from the Actions page (**Run workflow** on `main`, with the version), so a release needs no git and can be made from a phone. It tags the head of `main` and publishes that version's changelog section.
+- Where scripts do not run (some mail and file previews), the page says so, shows the answers to the inline checks and hides the controls that would do nothing. Before, it looked like a guide whose buttons were broken.
 
 ### Changed
 - CI, the Pages deploy and the Release workflow use the versions of GitHub's own actions that run on Node 24 (checkout v7, setup-python v7, setup-node v7, configure-pages v6, upload-pages-artifact v5, deploy-pages v5), so runs no longer warn that Node 20 is deprecated.
+- Printing opens collapsed `<details>` sections and closes them again afterwards, as it already showed the answers of the inline checks. A guide with neither flashcards nor questions prints no self-test sheet (it printed one saying "0 cards, 0 questions").
+- Reading a term aloud reads only its English words: "Binary search", not "Binary search 二分查找".
+- A saved highlight or note records `v`, the version of the list of block kinds its `cIdx` counts in, so that adding a kind of block (as this release does) moves no saved annotation. Records without it are read as version 1.
 
 ### Fixed
 - Publishing a release by hand on the Releases page made the Release workflow fail and send a failure email: the release's new tag started the workflow, which then found the release already there. The workflow now leaves an existing release as it is.
+- The chapter spine, study cards (`dt`, `dd`) and code blocks (`pre`) could not be highlighted or annotated: the page said the area was not supported.
+- A highlight on a term could not be removed: clicking it opened only the term card. The highlight's toolbar now shows too, and the card makes room for it.
+- A note whose text ended inside a term could not be opened: its 💬 flag opened the term card.
+- In a guide with the English interface, the validator took bold text for terms, so emphasis such as `<strong>Remember this:</strong>` failed validation unless allow-listed. There, only text marked `span.en` needs a card.
+- A source file saved with a UTF-8 byte-order mark, as some Windows editors do, failed the build ("Unexpected UTF-8 BOM"); one in another encoding, such as GBK, stopped it with a Python traceback, and stopped `build --all` there. A byte-order mark is now fine, and another encoding is reported with the line to look at while the other subjects still build.
+- The message shown after saving covered the buttons under it for a few seconds; clicks now go through it.
+
+### Upgrading
+- Rebuild your subjects. Students' highlights and notes stay where they were, including short ones such as a single table cell.
 
 ## 0.3.0
 
