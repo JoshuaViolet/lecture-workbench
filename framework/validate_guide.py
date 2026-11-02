@@ -13,8 +13,9 @@ Checks (any failure exits 1):
               will not show offline, and local files that must be kept next to the guide
               (built guides normally embed their images)
   content     no raw LaTeX in prose or data (the page has no math renderer; code and money
-              amounts such as "$5 to $10" are not LaTeX), every English term in span.en /
-              <strong> has a term card (or is allow-listed)
+              amounts such as "$5 to $10" are not LaTeX), every term in span.en has a term card
+              (or is allow-listed), and so does English in <strong> unless the page's interface
+              is English (bold is emphasis there)
 Without Node.js the two checks that need it are skipped, and the report says so.
 Teaching-quality lint (warnings; failures with --strict):
               the correct option is the longest one in more than 40% of questions, question-type
@@ -236,6 +237,9 @@ def main(argv):
     except OSError as e:
         print(f"VALIDATE FAILED\n  cannot read {target}: {e.strerror}")
         return 1
+    except UnicodeDecodeError:
+        print(f"VALIDATE FAILED\n  {target} is not UTF-8 text, so it is not a page this framework built")
+        return 1
 
     failures, warnings, skipped = [], [], []
     offline_warnings = []   # reported, but never a failure
@@ -338,17 +342,25 @@ def main(argv):
     main_m = re.search(r'<main id="main-content">(.*)</main>', visible, re.S)
     funcs = re.search(r"(function lexiNorm.*?)function showTermCard", script, re.S)
     if lexicon is not None and main_m and funcs:
+        # Text marked as a term (span.en) needs a card. So does English in bold, except in a guide
+        # with an English interface: there bold is emphasis ("<strong>Remember:</strong>").
+        english_ui = re.search(r"""<html\b[^>]*\blang\s*=\s*["']?en\b""", html, re.I) is not None
         texts = set()
-        for en, strong in re.findall(r'<span class="en">(.*?)</span>|<strong(?:\s[^>]*)?>(.*?)</strong>',
-                                     main_m.group(1), re.S):
-            t = re.sub(r"<[^>]+>", "", en or strong).strip()
+        for m in re.finditer(r'<span class="en">(?P<en>.*?)</span>|<strong(?:\s[^>]*)?>(?P<strong>.*?)</strong>',
+                             main_m.group(1), re.S):
+            if m.group("strong") is not None and english_ui:
+                continue
+            t = re.sub(r"<[^>]+>", "", m.group("en") if m.group("en") is not None else m.group("strong")).strip()
             if t:
                 texts.add(t)
         allow = []
         allow_path = os.path.join(base, "lexicon_allowlist.txt")
         if os.path.exists(allow_path):
-            with open(allow_path, encoding="utf-8") as f:
-                allow = [ln.strip() for ln in f if ln.strip() and not ln.startswith("#")]
+            try:
+                with open(allow_path, encoding="utf-8-sig") as f:
+                    allow = [ln.strip() for ln in f if ln.strip() and not ln.startswith("#")]
+            except UnicodeDecodeError:
+                check("lexicon_allowlist.txt is UTF-8 text", False, "save it as UTF-8 in your editor")
         audit = ("const termLexicon = " + json.dumps(lexicon, ensure_ascii=False) + ";\n"
                  + funcs.group(1)
                  + "\nbuildLexiconIndex();\n"

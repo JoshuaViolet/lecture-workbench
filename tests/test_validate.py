@@ -45,6 +45,19 @@ def test_english_term_without_card_fails(make_subject):
     assert code == 1 and "no card for: Interpolation search" in out
 
 
+def test_bold_text_needs_a_card_only_in_a_chinese_interface_guide(make_subject):
+    # in an English guide bold is emphasis; in a Chinese one, English in bold is usually a term
+    content = '<section id="s"><p><strong>Remember this:</strong> the array must be sorted.</p></section>'
+    code, out = validate(build_guide.build(str(make_subject("en", config={"lang": "en"}, content=content))))
+    assert code == 0, out
+    code, out = validate(build_guide.build(str(make_subject("zh", content=content))))
+    assert code == 1 and "no card for: Remember this:" in out
+    # text marked as a term needs its card in either
+    content = '<section id="s"><p><span class="term"><span class="en">Interpolation search</span></span></p></section>'
+    code, out = validate(build_guide.build(str(make_subject("en-term", config={"lang": "en"}, content=content))))
+    assert code == 1 and "no card for: Interpolation search" in out
+
+
 def test_allowlisted_term_passes(make_subject):
     content = '<section id="s"><p><strong>Interpolation search</strong></p></section>'
     subject = make_subject(content=content)
