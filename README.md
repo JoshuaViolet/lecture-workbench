@@ -13,7 +13,7 @@ Turn lecture notes into a **single, self-contained HTML study guide** that works
 
 ## Features
 
-- **Highlights and margin notes** that survive reloads, even when the selection crosses bold text or other inline markup. Stored per guide in `localStorage`; export as JSON and import it on another device (importing merges, it never deletes what is already there), or copy as Markdown in reading order. Two open tabs don't overwrite each other, and a note being typed is kept if you click away.
+- **Highlights and margin notes** that survive reloads, even when the selection crosses bold text or other inline markup. Stored per guide in `localStorage`; export as JSON and import it on another device, choosing to merge it with what is already there or to replace that, or copy as Markdown in reading order. Two open tabs don't overwrite each other, and a note being typed is kept if you click away.
 - **Term cards** on hover: IPA, stressed syllables, etymology, a memory hook, and pronunciation through the Web Speech API.
 - **Flashcards** and **multiple-choice questions** with explanations. Options are shuffled on every render so the position of the answer can't be learned instead of the content. A question can carry a code block, shown exactly as written. The page remembers which questions you got wrong last time and can narrow practice to those.
 - **Figures** from local image files, embedded at build time; click one to see it full size.
@@ -136,7 +136,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/pytest
 ```
 
-The suite has unit tests for the builder and validator, and Playwright tests that open the built demo from `file://` and drive it like a student: select text, click the toolbar, reload, work in two tabs, export a backup and merge it into another browser, answer questions and come back, open the guide copied on its own.
+The suite has unit tests for the builder and validator, and Playwright tests that open the built demo from `file://` and drive it like a student: select text, click the toolbar, reload, work in two tabs, export a backup and merge it into or replace another browser's annotations, answer questions and come back, open the guide copied on its own.
 
 ## License
 

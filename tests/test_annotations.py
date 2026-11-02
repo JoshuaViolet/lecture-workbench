@@ -176,9 +176,32 @@ def test_export_then_import_round_trip(page, browser, demo_guide, tmp_path):
 OTHER_START, OTHER_END = "表里只算", "排序成本"
 
 
-def import_backup(page, backup):
+IMPORT_BUTTON = {"merge": "#import-dialog .fc-btn:has-text('合并')",
+                 "replace": "#import-dialog .fc-btn:has-text('覆盖')",
+                 "cancel": "#import-dialog .fc-btn:has-text('取消')"}
+
+
+def choose_file(page, backup):
+    """Pick a backup to import and return the dialog that asks what to do with it."""
+    page.set_input_files("#import-file-input", str(backup))
+    dialog = page.locator("#import-dialog")
+    dialog.wait_for(state="visible")
+    return dialog
+
+
+def import_backup(page, backup, choice):
+    choose_file(page, backup)
     with page.expect_navigation():
-        page.set_input_files("#import-file-input", str(backup))
+        page.click(IMPORT_BUTTON[choice])
+
+
+def device_with_own_annotations(browser, demo_guide):
+    """Another browser that already has a highlight and a note of its own."""
+    other = browser.new_context().new_page()
+    other.goto("file://" + demo_guide)
+    mine = add_highlight(other, "n 翻倍", "比较")
+    add_note(other, "设备 B 的批注", OTHER_START, OTHER_END)
+    return other, mine
 
 
 def test_import_merges_with_annotations_already_here(page, browser, demo_guide, tmp_path):
@@ -186,21 +209,65 @@ def test_import_merges_with_annotations_already_here(page, browser, demo_guide, 
     add_note(page, "设备 A 的批注", "可以复述", "判断")
     backup = export_backup(page, tmp_path)
 
-    other = browser.new_context().new_page()
-    other.goto("file://" + demo_guide)
-    mine = add_highlight(other, "n 翻倍", "比较")
-    add_note(other, "设备 B 的批注", OTHER_START, OTHER_END)
-    import_backup(other, backup)
+    other, mine = device_with_own_annotations(browser, demo_guide)
+    dialog = choose_file(other, backup)
+    assert "备份里有 1 条高亮、1 条批注；本机现在有 1 条高亮、1 条批注" in dialog.inner_text()
+    assert other.locator("#import-dialog-warning").is_hidden()
+    with other.expect_navigation():
+        other.click(IMPORT_BUTTON["merge"])
     assert sorted(h["text"] for h in stored(other, "highlights")) == sorted([theirs, mine])
     assert sorted(n["note"] for n in stored(other, "notes")) == ["设备 A 的批注", "设备 B 的批注"]
     assert other.locator(".note-flag").count() == 2
 
     # the same backup again brings nothing new, so nothing is duplicated and the page stays
-    other.set_input_files("#import-file-input", str(backup))
+    choose_file(other, backup)
+    other.click(IMPORT_BUTTON["merge"])
     other.locator("#toast-msg").wait_for(state="visible")
     assert "都已经有了" in other.locator("#toast-msg").inner_text()
     assert len(stored(other, "highlights")) == 2 and len(stored(other, "notes")) == 2
     other.context.close()
+
+
+def test_import_can_replace_what_is_here(page, browser, demo_guide, tmp_path):
+    theirs = add_highlight(page)
+    add_note(page, "设备 A 的批注", "可以复述", "判断")
+    backup = export_backup(page, tmp_path)
+
+    other, mine = device_with_own_annotations(browser, demo_guide)
+    before = stored(other, "highlights")
+    import_backup(other, backup, "replace")
+    assert [h["text"] for h in stored(other, "highlights")] == [theirs]
+    assert [n["note"] for n in stored(other, "notes")] == ["设备 A 的批注"]
+    assert pieces(other, "mark.user-hl") == theirs and other.locator(".note-flag").count() == 1
+    # what was replaced is kept aside once, so a mistaken choice can still be undone
+    assert other.evaluate("JSON.parse(localStorage.getItem(LS.highlights + '_before_import'))") == before
+    other.context.close()
+
+
+def test_import_can_be_cancelled(page, browser, demo_guide, tmp_path):
+    add_highlight(page)
+    backup = export_backup(page, tmp_path)
+    other, mine = device_with_own_annotations(browser, demo_guide)
+    choose_file(other, backup)
+    other.click(IMPORT_BUTTON["cancel"])
+    assert other.locator("#import-dialog").is_hidden()
+    assert [h["text"] for h in stored(other, "highlights")] == [mine]
+    # Escape closes the dialog the same way
+    choose_file(other, backup)
+    other.keyboard.press("Escape")
+    assert other.locator("#import-dialog").is_hidden() and len(stored(other, "highlights")) == 1
+    other.context.close()
+
+
+def test_a_backup_from_another_guide_is_flagged_before_importing(page, tmp_path):
+    backup = tmp_path / "other-guide.json"
+    backup.write_text(json.dumps({"app": "some-other-guide", "highlights": [], "notes": [
+        {"id": "note_x", "text": "可以复述", "note": "别处的批注"}]}), encoding="utf-8")
+    choose_file(page, backup)   # asked even though this browser has nothing yet
+    assert "另一份讲义（some-other-guide）" in page.locator("#import-dialog-warning").inner_text()
+    with page.expect_navigation():
+        page.click(IMPORT_BUTTON["merge"])
+    assert [n["note"] for n in stored(page, "notes")] == ["别处的批注"]
 
 
 def test_merge_keeps_everything_and_prefers_the_newer_edit(page):

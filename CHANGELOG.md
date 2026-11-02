@@ -12,7 +12,7 @@
 - Ctrl/⌘+Enter saves a note.
 
 ### Changed
-- Importing a backup merges it with what the browser already has instead of replacing it; the newer edit of a note wins, and the page says when a backup holds nothing new.
+- Importing a backup asks whether to **merge** it with what the browser already has (nothing is deleted, the newer edit of a note wins, and the page says when a backup holds nothing new) or **replace** it, showing how many highlights and notes each side has. A browser with nothing yet is not asked. Replacing keeps one copy of what it replaced under `<key>_before_import`. A backup from another guide is flagged in the same dialog instead of a separate confirm.
 - Dark mode follows the system setting until the reader picks a theme, and is applied before the first paint.
 - On phones, tables scroll sideways inside their own box and the page uses less padding.
 - Reading a term aloud picks an installed English voice (Australian first, as before) instead of leaving a non-English default voice to read it.
@@ -21,7 +21,7 @@
 - CI and the Pages deploy use Node 24 (Node 20 is past end of life).
 
 ### Fixed
-- Importing a backup erased the annotations already in the browser.
+- Importing a backup erased the annotations already in the browser, without asking.
 - With the guide open in two tabs, saving a note in one erased notes saved in the other.
 - Clicking outside the note editor threw away what had been typed.
 - When storage writes failed, the export the message recommended contained nothing.

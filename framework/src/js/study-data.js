@@ -24,8 +24,11 @@ function isAnnotation(x) {
     return x && typeof x === "object" && typeof x.id === "string" && typeof x.text === "string" && x.text;
 }
 
-// Importing merges a backup into what this browser already has; it never deletes anything,
-// so a backup from another device cannot wipe out the annotations made here.
+// Importing asks what to do with what this browser already has: merge the backup into it
+// (nothing is deleted; for a note in both, the newer edit wins) or replace it with the backup.
+// With nothing here, there is nothing to choose and the backup is simply loaded.
+let pendingImport = null;   // a checked backup waiting for the reader's choice
+
 function importStudyData(file) {
     if (!file) return;
     const reader = new FileReader();
@@ -41,23 +44,68 @@ function importStudyData(file) {
             showToast(UI.toast_import_empty);
             return;
         }
+        // records are checked one by one; a list the backup does not have is left alone
+        const backup = {
+            highlights: Array.isArray(data.highlights) ? data.highlights.filter(isAnnotation) : null,
+            notes: Array.isArray(data.notes)
+                ? data.notes.filter(n => isAnnotation(n) && typeof n.note === "string") : null
+        };
         // backups carry the guide's app id; older backups without one are accepted
-        if (data.app && data.app !== APP_ID) {
-            if (!confirm(t("confirm_import_other", { app: data.app }))) return;
-        }
-        const hls = mergeById(readList(LS.highlights), (data.highlights || []).filter(isAnnotation), true);
-        const notes = mergeById(readList(LS.notes),
-            (data.notes || []).filter(n => isAnnotation(n) && typeof n.note === "string"));
-        const changed = { highlights: hls.added + hls.updated, notes: notes.added + notes.updated };
-        if (!changed.highlights && !changed.notes) {
-            showToast(UI.toast_import_nothing_new);
+        const otherGuide = data.app && data.app !== APP_ID ? String(data.app) : null;
+        const here = { highlights: readList(LS.highlights), notes: readList(LS.notes) };
+        if (!here.highlights.length && !here.notes.length && !otherGuide) {
+            finishImport("merge", backup);
             return;
         }
-        if (!writeList(LS.highlights, hls.list) || !writeList(LS.notes, notes.list)) return;
-        showToast(t("toast_imported", changed));
-        setTimeout(() => location.reload(), 900);
+        pendingImport = backup;
+        document.getElementById("import-dialog-summary").textContent = t("import_summary", {
+            bh: (backup.highlights || []).length, bn: (backup.notes || []).length,
+            lh: here.highlights.length, ln: here.notes.length
+        });
+        const warning = document.getElementById("import-dialog-warning");
+        warning.textContent = otherGuide ? t("import_other_guide", { app: otherGuide }) : "";
+        warning.style.display = otherGuide ? "" : "none";
+        const dialog = document.getElementById("import-dialog");
+        if (typeof dialog.showModal === "function") dialog.showModal();
+        else dialog.setAttribute("open", "");
     };
     reader.readAsText(file);
+}
+
+// mode: "merge", "replace" or "cancel" (the dialog's buttons); backup: given when no dialog was shown
+function finishImport(mode, backup) {
+    backup = backup || pendingImport;
+    pendingImport = null;
+    const dialog = document.getElementById("import-dialog");
+    if (typeof dialog.close === "function") { if (dialog.open) dialog.close(); }
+    else dialog.removeAttribute("open");
+    if (!backup || (mode !== "merge" && mode !== "replace")) return;
+
+    const lists = [[LS.highlights, backup.highlights, true], [LS.notes, backup.notes, false]];
+    const next = {}, changed = {};
+    lists.forEach(([key, incoming, dedupe]) => {
+        const current = readList(key);
+        if (!incoming) {
+            next[key] = current;
+        } else if (mode === "replace") {
+            // keep one copy of what is replaced, as with unreadable values, so a mistaken choice can be undone
+            if (current.length) lsSet(key + "_before_import", JSON.stringify(current));
+            next[key] = incoming;
+        } else {
+            const merged = mergeById(current, incoming, dedupe);
+            next[key] = merged.list;
+            changed[key] = merged.added + merged.updated;
+        }
+    });
+    if (mode === "merge" && !changed[LS.highlights] && !changed[LS.notes]) {
+        showToast(UI.toast_import_nothing_new);
+        return;
+    }
+    if (!writeList(LS.highlights, next[LS.highlights]) || !writeList(LS.notes, next[LS.notes])) return;
+    showToast(mode === "replace"
+        ? t("toast_import_replaced", { highlights: next[LS.highlights].length, notes: next[LS.notes].length })
+        : t("toast_imported", { highlights: changed[LS.highlights] || 0, notes: changed[LS.notes] || 0 }));
+    setTimeout(() => location.reload(), 900);
 }
 
 function chapterTitleFor(el) {

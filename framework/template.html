@@ -132,6 +132,18 @@
     <!-- Toast Notification -->
     <div id="toast-msg" role="status" aria-live="polite"></div>
 
+    <!-- Import Dialog: merge a backup into what this browser has, or replace it -->
+    <dialog id="import-dialog" aria-labelledby="import-dialog-title">
+        <h3 id="import-dialog-title">{{UI:import}}</h3>
+        <p id="import-dialog-summary"></p>
+        <p id="import-dialog-warning"></p>
+        <div class="import-dialog-btns">
+            <button class="fc-btn" onclick="finishImport('merge')">{{UI:import_merge}}</button>
+            <button class="fc-btn fc-btn-sec import-replace" onclick="finishImport('replace')">{{UI:import_replace}}</button>
+            <button class="fc-btn fc-btn-sec" onclick="finishImport('cancel')">{{UI:import_cancel}}</button>
+        </div>
+    </dialog>
+
     <!-- Lightbox Modal -->
     <div id="lightbox-modal" onclick="closeLightbox(event)">
         <span class="lightbox-close" onclick="closeLightbox(event)" role="button" tabindex="0" aria-label="{{UI:lightbox_close}}">&times;</span>

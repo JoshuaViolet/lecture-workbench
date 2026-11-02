@@ -91,7 +91,7 @@ Known trade-off: an annotation lives inside one block. A selection that runs int
 - An unreadable `localStorage` value is copied to `<key>_unreadable` before anything overwrites it, and the page still starts.
 - A failed write (storage full or blocked) is reported instead of ignored, and the page keeps its own copy of every annotation list, so an export still contains what could not be stored. (The message about a failed write tells the student to export; before, export read only from storage and exported nothing.)
 - Every change re-reads the stored list, applies one change (add, edit or remove one record) and writes it back. Writing back a copy loaded at start-up, as notes once did, erased whatever another tab of the same guide had saved meanwhile.
-- Importing a backup **merges** it by id: nothing already in the browser is removed, the more recently edited version of a note wins, and a highlight on the same text (same quote and context) is not added twice. A replace-on-import would let a backup from one device wipe out the annotations made on another.
+- Importing a backup into a browser that already has annotations asks first, in a dialog that shows how many highlights and notes the backup and the browser each hold. **Merge** (the default button) matches records by id: nothing in the browser is removed, the more recently edited version of a note wins, and a highlight on the same text (same quote and context) is not added twice. **Replace** makes the browser hold exactly the backup, after keeping one copy of what it replaces under `<key>_before_import`. Import used to replace without asking, so a backup from one device wiped out the annotations made on another. A browser with nothing yet gets the backup without a question; a backup from another guide is always flagged in the dialog.
 - Clicking outside the note editor saves a changed draft instead of discarding it; Cancel and Escape discard on purpose.
 - Backups carry the guide's `app_id`; importing a backup from another guide asks first. Imported records are checked one by one.
 
@@ -106,6 +106,6 @@ In the guides this tool was built for, the correct option was B in up to 91% of 
 ## Testing
 
 - `tests/test_build.py`, `tests/test_validate.py`: the builder and validator, including escaping, schema errors and lint.
-- `tests/test_engine.py`, `tests/test_annotations.py`: Playwright opens the built demo from `file://` and drives it the way a student would: select text, click the toolbar, reload, remove, work in two tabs, export a backup and merge it into another browser profile, answer questions and come back, open the guide after copying it alone into an empty folder. These include regression tests for each bug above; they fail on the previous engine.
+- `tests/test_engine.py`, `tests/test_annotations.py`: Playwright opens the built demo from `file://` and drives it the way a student would: select text, click the toolbar, reload, remove, work in two tabs, export a backup and merge it into, or replace, another browser profile's annotations, answer questions and come back, open the guide after copying it alone into an empty folder. These include regression tests for each bug above; they fail on the previous engine.
 
 CI runs both on Python 3.9 and 3.12. A second workflow publishes the demo to GitHub Pages.
