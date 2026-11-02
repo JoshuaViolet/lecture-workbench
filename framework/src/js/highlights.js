@@ -32,20 +32,25 @@ function handleSelection() {
 
 function handleDocClick(e) {
     const toolbar = document.getElementById("text-selection-toolbar");
+    const term = e.target.closest(".lexi");
     // Clicking outside the term card (and not on a lexicon term) closes it
-    if (!e.target.closest("#term-card") && !e.target.closest(".lexi")) {
+    if (!e.target.closest("#term-card") && !term) {
         hideTermCard();
     }
     if (e.target.closest("#note-editor") || e.target.closest("#text-selection-toolbar")) return;
+
+    const flag = e.target.closest(".note-flag");
+    const hlEl = e.target.closest(".user-hl");
+    const noteAnchor = e.target.closest(".note-anchor");
+    // Looking a term up (its own handler shows the card) leaves an open note editor alone;
+    // a click on the reader's own highlight or note inside a term goes on below.
+    if (term && !flag && !hlEl && !noteAnchor) return;
 
     // Any other click ends an open note editor; what was typed into it is kept, not thrown away
     dismissNoteEditor();
 
     // The 💬 flag always opens its note. Highlighted text shows the highlight toolbar even
     // inside a note, so the highlight can still be removed; other noted text opens the note.
-    const flag = e.target.closest(".note-flag");
-    const hlEl = e.target.closest(".user-hl");
-    const noteAnchor = e.target.closest(".note-anchor");
     if (flag || (noteAnchor && !hlEl)) {
         toolbar.style.display = "none";
         activeHighlightEl = null;
@@ -70,9 +75,11 @@ function showHighlightToolbar(hlEl) {
     positionToolbar(document.getElementById("text-selection-toolbar"), hlEl.getBoundingClientRect());
 }
 
+const TOOLBAR_ROOM = 46;   // the toolbar sits this far above the text it acts on
+
 function positionToolbar(toolbar, rect) {
     toolbar.style.display = "flex";
-    const top = window.scrollY + rect.top - 46;
+    const top = window.scrollY + rect.top - TOOLBAR_ROOM;
     const left = window.scrollX + rect.left + (rect.width / 2) - (toolbar.offsetWidth / 2);
     const maxLeft = window.scrollX + document.documentElement.clientWidth - toolbar.offsetWidth - 10;
     toolbar.style.top = Math.max(10, top) + "px";

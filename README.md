@@ -13,12 +13,13 @@ Turn lecture notes into a **single, self-contained HTML study guide** that works
 
 ## Features
 
-- **Highlights and margin notes** that survive reloads, even when the selection crosses bold text or other inline markup. Stored per guide in `localStorage`; export as JSON and import it on another device, choosing to merge it with what is already there or to replace that, or copy as Markdown in reading order. Two open tabs don't overwrite each other, and a note being typed is kept if you click away.
+- **Highlights and margin notes** anywhere in the lesson text (paragraphs, lists, tables, definition lists, code) that survive reloads, even when the selection crosses bold text or a term. Stored per guide in `localStorage`; export as JSON and import it on another device, choosing to merge it with what is already there or to replace that, or copy as Markdown in reading order. Two open tabs don't overwrite each other, and a note being typed is kept if you click away.
 - **Term cards** on hover: IPA, stressed syllables, etymology, a memory hook, and pronunciation through the Web Speech API.
 - **Flashcards** and **multiple-choice questions** with explanations. Options are shuffled on every render so the position of the answer can't be learned instead of the content. A question can carry a code block, shown exactly as written. The page remembers which questions you got wrong last time and can narrow practice to those.
 - **Figures** from local image files, embedded at build time; click one to see it full size.
 - **Teaching components** for structuring a lesson: chapter spine, evidence / limitation / misconception / transfer blocks, study cards.
-- **Print mode** that forces a light theme and appends a self-test sheet with the answer key.
+- **Print mode** that forces a light theme, prints collapsed sections open and appends a self-test sheet with the answer key (when the guide has flashcards or questions).
+- Where scripts don't run (some mail and file previews), the page says so, shows the answers to the inline checks and hides the controls that would do nothing.
 - A colour theme that follows the system by default, including when it switches while the guide is open, or is set to light or dark in the sidebar; a contents list that marks the section you're reading, layouts for phones (wide tables scroll sideways), reading progress, keyboard support, `prefers-reduced-motion`.
 
 ## Quick start
@@ -29,7 +30,7 @@ Requires Python 3.9+. Node.js is recommended: the validator uses it to syntax-ch
 git clone https://github.com/JoshuaViolet/lecture-workbench.git
 cd lecture-workbench
 python3 framework/cli.py build --all --validate
-open subjects/demo-binary-search/Binary_Search_Demo.html
+open subjects/demo-binary-search/Binary_Search_Demo.html   # macOS; elsewhere, double-click the file
 ```
 
 ## Commands
@@ -61,6 +62,8 @@ subjects/my-lecture/
   data.json        flashcards, mcqData, termLexicon
   assets/          images referenced from content.html (optional; embedded in the built page)
 ```
+
+Save the files as UTF-8 (with or without a byte-order mark). A file in another encoding, such as GBK, fails the build with the line to look at.
 
 `config.json`:
 
@@ -123,7 +126,7 @@ Coming from the older `data.js` format: `python3 framework/migrate_datajs.py sub
 |---|---|
 | structure | broken `#anchors`, `getElementById` targets that don't exist, undefined inline handlers, unbalanced tags, unfilled placeholders, script syntax errors |
 | offline | local files the page points to that don't exist. Warnings, never failures: anything it would load from the network (a CDN script, a web font, a hotlinked image, an iframe), which won't show offline, and files the guide needs beside it |
-| content | raw LaTeX in prose or data (there is no math renderer; code and amounts such as "$5 to $10" are not taken for LaTeX), English terms with no term card |
+| content | raw LaTeX in prose or data (there is no math renderer; code and amounts such as "$5 to $10" are not taken for LaTeX); terms with no term card: text marked `span.en`, and English in `<strong>` in a guide with the Chinese interface (with the English interface, bold is taken for emphasis) |
 | teaching-quality lint | the correct option being the only longest one in more than 40% of questions, question-type tags in stems (`Mechanism: …`), explanations that name options by letter although options are shuffled, answers clustered on one letter in fixed-order questions, duplicate questions |
 
 Lint findings are warnings; `--strict` turns them into failures. Without Node.js, the syntax check and the term-card audit are skipped and the summary says so.

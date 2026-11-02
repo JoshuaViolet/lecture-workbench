@@ -42,7 +42,7 @@ A lesson refers to its images by relative path (`<img src="assets/s12.png">`), w
 
 Embedding costs about a third more bytes than the image files (base64). The build prints each guide's size and warns above 25 MB, which phones open slowly; a 30 MB test guide with 40 slides parses in about half a second in desktop Chromium. An image used twice is embedded twice.
 
-The validator checks the result from the other side: it lists every URL the page would load by itself (`src`, `srcset`, `poster`, `<object data>`, the `href` of `<link>` and SVG `<image>`/`<use>`, CSS `url()` and `@import`, including in the data's HTML) A local file that does not exist fails. Anything from the network is a warning, not a failure, also under `--strict`: the guide still opens and works, but those resources are missing offline, and authors sometimes accept that (an embedded video, say). The same goes for local files the guide needs beside it. An `<a href>` is a link, not a load, so linking to online material raises nothing.
+The validator checks the result from the other side: it lists every URL the page would load by itself (`src`, `srcset`, `poster`, `<object data>`, the `href` of `<link>` and SVG `<image>`/`<use>`, CSS `url()` and `@import`, including in the data's HTML). A local file that does not exist fails. Anything from the network is a warning, not a failure, also under `--strict`: the guide still opens and works, but those resources are missing offline, and authors sometimes accept that (an embedded video, say). The same goes for local files the guide needs beside it. An `<a href>` is a link, not a load, so linking to online material raises nothing.
 
 ## Runtime
 
@@ -53,9 +53,11 @@ The engine is plain DOM code run once at the end of `<body>`:
 | storage | `lsGet` / `lsSet` / `readList` / `writeList`, and `changeList` / `mergeById` for annotation lists (below). Every `localStorage` access is guarded; all keys derive from `DOC_ID`, so many guides can share an origin |
 | annotations | highlights and margin notes (below) |
 | practice | flashcards, MCQ with per-render option shuffling, an optional code block and remembered results, collapsible inline checks |
-| term cards | builds an index from `termLexicon` keys and attaches hover cards to `span.en` and `<strong>` text that matches |
+| term cards | builds an index from `termLexicon` keys and attaches hover cards to `span.en` and `<strong>` text that matches. A click pins the card; a click on the reader's own highlight inside a term also shows the highlight's toolbar, and one on a note there opens the note |
 | layout | sidebar collapse, colour theme, contents marker, progress bar, lightbox for figure images, a scrolling box around each table |
 | print | `beforeprint` builds a self-test appendix and forces lazy images to load |
+
+Where scripts do not run at all (some mail and file previews show HTML that way), a `<noscript>` note at the top of the page says why highlights, notes and practice are missing, a `<noscript>` stylesheet in `<head>` shows the answers of the inline checks, and the controls that would do nothing are hidden.
 
 The theme is a setting with three values: follow the system (the default; nothing is stored), light or dark (stored under `<DOC_ID>_theme`). It is the one exception to "run once at the end of `<body>`": a few lines in `<head>` apply it before the first paint, because applying it at the end of `<body>` showed dark-mode readers a white page first. The main script then keeps following the system's `prefers-color-scheme` while the setting is "system", so a device that switches to dark in the evening takes an open guide with it.
 
@@ -68,10 +70,11 @@ The first version stored only the selected text and, on reload, searched for it 
 An annotation is now stored as
 
 ```js
-{ id, cIdx, start, end, text, prefix, suffix }
+{ id, v, cIdx, start, end, text, prefix, suffix }
 ```
 
-- `cIdx`: which block (`p`, `li`, `td`, headings, …) it is in, by document order
+- `cIdx`: which block (`p`, `li`, `td`, `dd`, `pre`, headings, …) it is in, by document order
+- `v`: which version of the list of block kinds `cIdx` counts in (below)
 - `start`, `end`: character offsets into that block's text
 - `text`, `prefix`, `suffix`: the exact text plus 32 characters of context on each side
 
@@ -84,6 +87,8 @@ To display it, walk the text nodes inside `[start, end)`, split the first and la
 
 The 💬 flag added after a note is excluded from the text model, so adding a note never shifts the offsets of other annotations. Records in the old `{ cIdx, text }` format still restore, through step 2.
 
+The kinds of block are versioned. Version 1 left out `dt`, `dd` and `pre`, so the chapter spine, study cards and code could not be annotated; version 2 adds them (not a question's code, which is redrawn on every render). Adding a kind renumbers every block after the first one of that kind, which would move the home block of every saved record and leave a short text with no context, a table cell "7" say, to the first "7" on the page. So each record keeps the version it was made with (no `v` means 1), and restoring looks its `cIdx` up in that version's list and finds the same element in today's.
+
 Known trade-off: an annotation lives inside one block. A selection that runs into the next paragraph keeps the part in the first block and the toast says so.
 
 ### Not losing student data
@@ -93,7 +98,7 @@ Known trade-off: an annotation lives inside one block. A selection that runs int
 - Every change re-reads the stored list, applies one change (add, edit or remove one record) and writes it back. Writing back a copy loaded at start-up, as notes once did, erased whatever another tab of the same guide had saved meanwhile.
 - Importing a backup into a browser that already has annotations asks first, in a dialog that shows how many highlights and notes the backup and the browser each hold. **Merge** (the default button) matches records by id: nothing in the browser is removed, the more recently edited version of a note wins, and a highlight on the same text (same quote and context) is not added twice. **Replace** makes the browser hold exactly the backup, after keeping one copy of what it replaces under `<key>_before_import`. Import used to replace without asking, so a backup from one device wiped out the annotations made on another. A browser with nothing yet gets the backup without a question; a backup from another guide is always flagged in the dialog.
 - Clicking outside the note editor saves a changed draft instead of discarding it; Cancel and Escape discard on purpose.
-- Backups carry the guide's `app_id`; importing a backup from another guide asks first. Imported records are checked one by one.
+- Backups carry the guide's `app_id`, which is how a backup from another guide is recognised. Imported records are checked one by one.
 
 ### Remembered practice results
 
@@ -106,6 +111,6 @@ In the guides this tool was built for, the correct option was B in up to 91% of 
 ## Testing
 
 - `tests/test_build.py`, `tests/test_validate.py`: the builder and validator, including escaping, schema errors and lint.
-- `tests/test_engine.py`, `tests/test_annotations.py`: Playwright opens the built demo from `file://` and drives it the way a student would: select text, click the toolbar, reload, remove, work in two tabs, export a backup and merge it into, or replace, another browser profile's annotations, answer questions and come back, open the guide after copying it alone into an empty folder. These include regression tests for each bug above; they fail on the previous engine.
+- `tests/test_engine.py`, `tests/test_annotations.py`: Playwright opens the built demo from `file://` and drives it the way a student would: select text, click the toolbar, reload, remove, work in two tabs, export a backup and merge it into, or replace, another browser profile's annotations, answer questions and come back, open the guide after copying it alone into an empty folder, or with scripts turned off. These include regression tests for each bug above; they fail on the previous engine.
 
 CI runs both on Python 3.9 and 3.12. A second workflow publishes the demo to GitHub Pages.

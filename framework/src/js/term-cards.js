@@ -49,7 +49,8 @@ function setTermField(id, value, asHtml) {
     (el.closest(".tc-row") || el).style.display = value ? "" : "none";
 }
 
-function showTermCard(entry, anchorEl) {
+// keepAbove: room to leave free above the term, where the highlight toolbar shows
+function showTermCard(entry, anchorEl, keepAbove) {
     currentTermEntry = entry;
     const card = document.getElementById("term-card");
     document.getElementById("tc-term").textContent = entry.term;
@@ -63,7 +64,7 @@ function showTermCard(entry, anchorEl) {
     let top = window.scrollY + rect.bottom + 8;
     // flip above the term when there is no room below
     if (rect.bottom + 8 + cardH > window.innerHeight) {
-        top = window.scrollY + rect.top - cardH - 8;
+        top = window.scrollY + rect.top - cardH - 8 - (keepAbove || 0);
     }
     const left = window.scrollX + rect.left;
     const maxLeft = window.scrollX + document.documentElement.clientWidth - card.offsetWidth - 10;
@@ -85,13 +86,21 @@ function speakCurrentTerm() {
     if (!currentTermEntry) return;
     if (!("speechSynthesis" in window)) { showToast(UI.toast_no_speech); return; }
     window.speechSynthesis.cancel();
-    const sayText = currentTermEntry.term.split("(")[0].replace(/\//g, " ").trim();
-    const u = new SpeechSynthesisUtterance(sayText);
+    const u = new SpeechSynthesisUtterance(termToSay(currentTermEntry));
     const voice = englishVoice();
     if (voice) u.voice = voice;
     u.lang = voice ? voice.lang : "en-AU";
     u.rate = 0.92;
     window.speechSynthesis.speak(u);
+}
+
+// The English words of a term: "Binary search 二分查找" and "Invariant（不变式）" are read as
+// "Binary search" and "Invariant", since an English voice cannot read the Chinese.
+function termToSay(entry) {
+    const english = entry.term.split(/[(（]/)[0]
+        .replace(/[\u2e80-\u9fff\uf900-\ufaff\uff00-\uffef]/g, " ")   // CJK and full-width forms
+        .replace(/\//g, " ").replace(/\s+/g, " ").trim();
+    return english || entry.keys[0];
 }
 
 // An installed English voice, Australian first as before, then British, American, any English.
@@ -122,11 +131,17 @@ function initTermCards() {
             clearTimeout(termHoverTimer);
             if (!termCardPinned) scheduleHideTermCard();
         });
+        // The click also reaches the document's handler, so a reader's own marks inside a term
+        // still work: a highlight shows its toolbar above the term as well as the card, and a
+        // note's text or 💬 flag opens the note instead of the card.
         sp.addEventListener("click", (e) => {
-            e.stopPropagation();
             clearTimeout(termHoverTimer);
+            if (e.target.closest(".note-flag, .note-anchor")) {
+                hideTermCard();
+                return;
+            }
             termCardPinned = true;
-            showTermCard(entry, sp);
+            showTermCard(entry, sp, e.target.closest(".user-hl") ? TOOLBAR_ROOM : 0);
         });
     });
     card.addEventListener("mouseenter", () => clearTimeout(termHideTimer));

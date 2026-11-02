@@ -1,8 +1,9 @@
 // ==========================================
 // HIGHLIGHTS AND MARGIN NOTES
 //
-// An annotation is stored as { id, cIdx, start, end, text, prefix, suffix }:
-//   cIdx         index of its block (p, li, td, ...) among all blocks in <main>
+// An annotation is stored as { id, v, cIdx, start, end, text, prefix, suffix }:
+//   cIdx         index of its block (p, li, dd, pre, ...) among all blocks in <main>
+//   v            which version of the block list cIdx counts in (BLOCK_SELECTORS below)
 //   start, end   character offsets into that block's text
 //   text         the exact annotated text, with up to CONTEXT_CHARS of prefix/suffix
 // Restoring trusts the offsets only while they still yield `text`; otherwise it
@@ -12,7 +13,18 @@
 // in it gets its own wrapper element, and all wrappers share the annotation's id.
 // Records from older versions ({ cIdx, text } only) restore through the search path.
 // ==========================================
-const BLOCK_SELECTOR = "p, li, td, th, div.quiz-q, div.quiz-a, figcaption, blockquote, h2, h3, h4";
+
+// The elements an annotation can live in, by version. Adding a kind of block renumbers the
+// blocks after it, so a record keeps the version it was made with and its cIdx is read in
+// that version's list. Records without v are version 1.
+const BLOCK_SELECTORS = {
+    1: "p, li, td, th, div.quiz-q, div.quiz-a, figcaption, blockquote, h2, h3, h4",
+    // the chapter spine and study cards (dt, dd) and code (pre; not a question's code, which
+    // is redrawn on every render)
+    2: "p, li, td, th, dt, dd, pre:not(.mcq-code), div.quiz-q, div.quiz-a, figcaption, blockquote, h2, h3, h4"
+};
+const BLOCK_VERSION = 2;
+const BLOCK_SELECTOR = BLOCK_SELECTORS[BLOCK_VERSION];
 const CONTEXT_CHARS = 32;
 let selectedRange = null;
 let activeHighlightEl = null;
@@ -20,6 +32,7 @@ let activeHighlightEl = null;
 document.addEventListener("selectionchange", handleSelection);
 document.addEventListener("click", handleDocClick);
 
-function getAllTextContainers() {
-    return Array.from(document.querySelectorAll("#main-content p, #main-content li, #main-content td, #main-content th, #main-content div.quiz-q, #main-content div.quiz-a, #main-content figcaption, #main-content blockquote, #main-content h2, #main-content h3, #main-content h4"));
+function getAllTextContainers(version) {
+    const main = document.getElementById("main-content");
+    return Array.from(main.querySelectorAll(BLOCK_SELECTORS[version || BLOCK_VERSION]));
 }

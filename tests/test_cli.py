@@ -94,6 +94,16 @@ def test_validate_explains_an_unbuilt_subject_or_missing_file(make_subject, tmp_
     assert "does not exist" in capsys.readouterr().out
 
 
+def test_a_config_saved_with_a_byte_order_mark_works(make_subject, capsys):
+    subject = make_subject()
+    config = subject / "config.json"
+    config.write_bytes(config.read_text(encoding="utf-8").encode("utf-8-sig"))
+    assert cli.main(["build", str(subject)]) == 0
+    assert cli.main(["validate", str(subject)]) == 0
+    with pytest.raises(build_guide.BuildError, match="already used"):   # its doc_id is still seen
+        cli.new_subject(str(subject.parent / "another"), doc_id=json.loads(config.read_text("utf-8-sig"))["doc_id"])
+
+
 def test_no_command_prints_help(capsys):
     assert cli.main([]) == 2
     assert "new" in capsys.readouterr().out

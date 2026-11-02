@@ -143,7 +143,7 @@ def new_subject(subject_dir, title=None, doc_id=None, output=None, lang=build_gu
     others = {d for r in roots if os.path.isdir(r) for d in build_guide.find_subject_dirs(r)}
     for other in sorted(others):
         try:
-            with open(os.path.join(other, "config.json"), encoding="utf-8") as f:
+            with open(os.path.join(other, "config.json"), encoding="utf-8-sig") as f:
                 taken = json.load(f).get("doc_id")
         except (OSError, ValueError, AttributeError):
             continue
@@ -164,7 +164,7 @@ def guide_path(target):
     if not os.path.isdir(target):
         return target
     try:
-        with open(os.path.join(target, "config.json"), encoding="utf-8") as f:
+        with open(os.path.join(target, "config.json"), encoding="utf-8-sig") as f:
             output = json.load(f)["output"]
     except (OSError, ValueError, KeyError, TypeError):
         raise build_guide.BuildError(f"{target} has no readable config.json with an output name")

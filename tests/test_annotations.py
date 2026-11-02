@@ -103,7 +103,8 @@ def test_restore_falls_back_to_context_when_offsets_are_stale(page):
 
 def test_legacy_record_without_offsets_restores_across_markup(page):
     text = page.evaluate(SELECT_JS, [SPAN_START, SPAN_END, 0]).strip()
-    c_idx = page.evaluate("getAllTextContainers().indexOf(getSelection().getRangeAt(0).startContainer.parentElement.closest('p'))")
+    # records of that age count cIdx in the first version of the block list
+    c_idx = page.evaluate("getAllTextContainers(1).indexOf(getSelection().getRangeAt(0).startContainer.parentElement.closest('p'))")
     legacy = [{"id": "hl_legacy", "cIdx": c_idx, "text": text}]
     page.evaluate("r => localStorage.setItem(LS.highlights, JSON.stringify(r))", legacy)
     page.reload()
@@ -132,6 +133,100 @@ def test_highlight_and_note_on_overlapping_text_both_restore(page):
     page.reload()
     assert pieces(page, ".note-anchor") == note_text
     assert pieces(page, "mark.user-hl") == hl_text
+
+
+SELECT_IN_JS = """([selector, text]) => {
+    const el = document.querySelector(selector);
+    const nodes = [], walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    const full = nodes.map(n => n.nodeValue).join("");
+    const from = full.indexOf(text), to = from + text.length;
+    const r = document.createRange();
+    let pos = 0;
+    for (const n of nodes) {
+        const len = n.nodeValue.length;
+        if (pos <= from && from < pos + len) r.setStart(n, from - pos);
+        if (pos < to && to <= pos + len) r.setEnd(n, to - pos);
+        pos += len;
+    }
+    getSelection().removeAllRanges();
+    getSelection().addRange(r);
+    return r.toString();
+}"""
+
+
+def select_in(page, selector, text):
+    """Select `text` inside the first element matching `selector`, across inline markup."""
+    assert page.evaluate(SELECT_IN_JS, [selector, text]) == text
+    page.locator("#text-selection-toolbar").wait_for(state="visible")
+
+
+def test_chapter_spine_and_code_can_be_annotated(page):
+    # the demo opens with a chapter spine (dl/dt/dd); its first code block is a pre
+    select_in(page, "#bs-overview dd", "最多只要比较 20 次")
+    page.click("#add-hl-btn")
+    select_in(page, "pre.diagram", "lo, hi = 0, len(items) - 1")
+    page.click("#add-note-btn")
+    page.fill("#note-editor-text", "闭区间")
+    page.keyboard.press("Control+Enter")
+    page.reload()
+    assert pieces(page, "#bs-overview dd mark.user-hl") == "最多只要比较 20 次"
+    assert pieces(page, "pre.diagram .note-anchor") == "lo, hi = 0, len(items) - 1"
+    assert [r["v"] for r in stored(page, "highlights") + stored(page, "notes")] == [2, 2]
+    assert page.page_errors == []
+
+
+def test_records_made_before_dd_and_pre_counted_keep_their_block(page):
+    # Before dt, dd and pre could hold annotations, cIdx counted blocks without them. A record
+    # whose text alone is ambiguous (a table cell "7"; there are three, with no context around
+    # them) must still go back to its own cell, not to the first "7" on the page.
+    cells = "#bs-cost table tbody td"
+    third = page.evaluate(f"[...document.querySelectorAll('{cells}')].filter(td => td.textContent === '7').length")
+    assert third == 3
+    old_index = page.evaluate(f"""getAllTextContainers(1).indexOf(
+        [...document.querySelectorAll('{cells}')].filter(td => td.textContent === '7')[2])""")
+    record = {"id": "hl_old", "cIdx": old_index, "start": 0, "end": 1, "text": "7", "prefix": "", "suffix": ""}
+    page.evaluate("r => localStorage.setItem(LS.highlights, JSON.stringify([r]))", record)
+    page.reload()
+    assert page.eval_on_selector("mark.user-hl", "m => m.closest('tr').textContent.trim()").startswith("100")
+
+
+def test_a_highlight_on_a_term_can_be_removed(page):
+    select_in(page, "#bs-overview p", "Sorted array")
+    page.click("#add-hl-btn")
+    assert page.evaluate("getComputedStyle(document.getElementById('toast-msg')).pointerEvents") == "none"
+    page.mouse.click(2, 2)
+    page.locator("#bs-overview .lexi mark.user-hl").click()
+    # the toolbar to remove it shows, and so does the term's card, without covering the toolbar
+    assert page.is_visible("#remove-hl-btn") and page.is_visible("#term-card")
+    bar, card = (page.locator(s).bounding_box() for s in ("#text-selection-toolbar", "#term-card"))
+    assert card["y"] + card["height"] <= bar["y"] or bar["y"] + bar["height"] <= card["y"]
+    page.click("#remove-hl-btn")
+    assert page.locator("mark.user-hl").count() == 0 and stored(page, "highlights") == []
+
+
+def test_looking_up_a_term_leaves_the_note_being_written_open(page):
+    select_in(page, "#bs-overview p", "里查找目标")
+    page.click("#add-note-btn")
+    page.fill("#note-editor-text", "半句")
+    page.locator("#bs-overview .lexi").first.click()
+    assert page.is_visible("#term-card") and page.is_visible("#note-editor")
+    assert page.input_value("#note-editor-text") == "半句" and stored(page, "notes") == []
+
+
+def test_a_note_ending_in_a_term_opens_from_its_flag(page):
+    select_in(page, "#bs-overview p", "在Sorted array")
+    page.click("#add-note-btn")
+    page.fill("#note-editor-text", "有序是前提")
+    page.keyboard.press("Control+Enter")
+    flag = page.locator(".note-flag")
+    assert flag.evaluate("f => !!f.closest('.lexi')")   # the flag sits inside the term
+    page.mouse.click(2, 2)
+    flag.click()
+    assert page.input_value("#note-editor-text") == "有序是前提"
+    assert not page.is_visible("#term-card")
+    page.click("#note-delete-btn")
+    assert stored(page, "notes") == []
 
 
 def test_unreadable_storage_does_not_break_the_page(page):

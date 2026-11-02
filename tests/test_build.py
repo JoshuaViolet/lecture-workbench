@@ -117,6 +117,26 @@ def test_build_all_continues_after_a_failure(make_subject, capsys):
     assert "1/2 subjects OK" in capsys.readouterr().out
 
 
+def test_sources_saved_with_a_byte_order_mark_and_windows_newlines_build(make_subject):
+    subject = make_subject()
+    for name in ("config.json", "data.json", "content.html"):
+        path = subject / name
+        path.write_bytes(path.read_text(encoding="utf-8").replace("\n", "\r\n").encode("utf-8-sig"))
+    out = built(build_guide.build(str(subject)))
+    assert "\ufeff" not in out and "\r" not in out
+
+
+def test_a_source_in_another_encoding_is_reported_and_the_rest_still_build(make_subject, capsys):
+    bad, good = make_subject("bad"), make_subject("good")
+    content = (bad / "content.html").read_text(encoding="utf-8")
+    (bad / "content.html").write_bytes(content.encode("gb18030"))   # GBK, as some Chinese editors save
+    assert build_guide.build_many([str(bad), str(good)]) == 1
+    out = capsys.readouterr().out
+    line = next(i for i, text in enumerate(content.split("\n"), 1) if not text.isascii())
+    assert f"content.html is not UTF-8 text (line {line} has bytes" in out and "save it as UTF-8" in out
+    assert (good / "Binary_Search_Demo.html").exists() and "1/2 subjects OK" in out
+
+
 def test_migrate_datajs_keeps_known_arrays_only(tmp_path):
     (tmp_path / "data.js").write_text(
         "        const flashcards = [{front:'f',back:'b'}];\n"

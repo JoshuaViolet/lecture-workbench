@@ -99,6 +99,24 @@ def test_print_sheet_lists_answer_text(page):
     assert "e<b>" in sheet and "undefined" not in sheet
 
 
+def test_the_self_test_sheet_leaves_out_what_the_guide_does_not_have(page):
+    page.evaluate("mcqData.length = 0; buildPrintSheet()")
+    assert page.locator("#print-sheet h3").count() == 1 and "Q:" in page.locator("#print-sheet").inner_text()
+    page.evaluate("flashcards.length = 0; buildPrintSheet()")
+    assert page.locator("#print-sheet").count() == 0   # no empty "0 cards, 0 questions" page
+
+
+def test_collapsed_details_print_open_and_close_again(page):
+    page.evaluate("""document.getElementById('bs-transfer').insertAdjacentHTML('beforeend',
+        '<details id="reading"><summary>Reading</summary><p>Chapter 3</p></details>'
+        + '<details id="open-one" open><summary>Open</summary><p>x</p></details>')""")
+    is_open = "['reading', 'open-one'].map(id => document.getElementById(id).open)"
+    page.evaluate("dispatchEvent(new Event('beforeprint'))")
+    assert page.evaluate(is_open) == [True, True]
+    page.evaluate("dispatchEvent(new Event('afterprint'))")
+    assert page.evaluate(is_open) == [False, True]
+
+
 def test_code_field_and_multiline_options_keep_their_layout(page):
     page.evaluate("mcqData.length = 1;"
                   "mcqData[0] = {q: 'What prints?', code: 'for i in range(2):\\n    print(i <b>)',"
@@ -135,6 +153,32 @@ def test_reading_aloud_picks_an_installed_english_voice(page):
                                 {"lang": "en-GB", "name": "Daniel"}]) == "Daniel"
     assert page.evaluate(pick, [{"lang": "zh-CN", "name": "Tingting"}, {"lang": "en-IN", "name": "Rishi"}]) == "Rishi"
     assert page.evaluate(pick, [{"lang": "zh-CN", "name": "Tingting"}]) is None
+
+
+def test_reading_aloud_says_the_english_words_only(page):
+    said = page.evaluate("""() => {
+        let said = null;
+        speechSynthesis.speak = u => { said = u.text; };
+        currentTermEntry = termLexicon[0];   // "Binary search 二分查找"
+        speakCurrentTerm();
+        return said;
+    }""")
+    assert said == "Binary search"
+    say = "entry => termToSay(entry)"
+    assert page.evaluate(say, {"term": "Invariant（不变式）", "keys": ["invariant"]}) == "Invariant"
+    assert page.evaluate(say, {"term": "EEG / ERP (脑电)", "keys": ["eeg"]}) == "EEG ERP"
+    assert page.evaluate(say, {"term": "二分查找", "keys": ["binary search"]}) == "binary search"
+
+
+def test_where_scripts_do_not_run_the_page_says_so_and_shows_the_answers(browser, demo_guide, page):
+    assert page.locator(".noscript-note").count() == 0   # scripts running: no notice
+    context = browser.new_context(java_script_enabled=False)
+    still = context.new_page()
+    still.goto("file://" + demo_guide)
+    assert "浏览器" in still.locator(".noscript-note").inner_text()
+    assert still.locator(".quiz-a").first.is_visible()
+    assert still.locator(".quiz-toggle").first.is_hidden() and still.locator("#sidebar-toggle-pill").is_hidden()
+    context.close()
 
 
 def test_sidebar_shortcut_leaves_browser_shortcuts_and_typing_alone(page):
