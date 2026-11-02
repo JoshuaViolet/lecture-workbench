@@ -11,8 +11,10 @@ Checks (any failure exits 1):
   offline     nothing is loaded from the network (scripts, styles, fonts, images, frames);
               any local file the page still points to exists (a warning says which files
               must be kept next to the guide; built guides normally embed their images)
-  content     no raw LaTeX (the page has no math renderer),
-              every English term in span.en / <strong> has a term card (or is allow-listed)
+  content     no raw LaTeX in prose or data (the page has no math renderer; code and money
+              amounts such as "$5 to $10" are not LaTeX), every English term in span.en /
+              <strong> has a term card (or is allow-listed)
+Without Node.js the two checks that need it are skipped, and the report says so.
 Teaching-quality lint (warnings; failures with --strict):
               the correct option is the longest one in more than 40% of questions, question-type
               tags in stems, explanations that name options by letter although options are
@@ -104,12 +106,36 @@ def classify_url(url, base):
     return ("local", os.path.normpath(os.path.join(base, unquote(urlsplit(url).path))))
 
 
+# Raw LaTeX that would reach the reader as source. Inline math follows pandoc's rule: the opening $
+# has a non-space after it, the closing $ a non-space before it and no digit after it, so money
+# ("$5 to $10", "$5-$10") is not math. Code is removed first: R's df$col and shell's $HOME are code.
+TEX_RE = re.compile(r"\$\$(?=\S)[^$]{1,200}?\$\$"
+                    r"|(?<![\\$])\$(?![\s$])[^$\n]{1,80}?(?<![\s\\$])\$(?![\d$])"
+                    r"|\\(?:frac|sqrt|alpha|beta|Delta|sigma|times|cdot|leq|geq|neq|rightarrow)\b")
+# Fields of the data arrays that hold prose (code and IPA are left out).
+PROSE_FIELDS = {"flashcards": ("front", "back"), "mcqData": ("q", "opts", "exp"),
+                "termLexicon": ("term", "parts", "hook")}
+
+
+def raw_tex(markup):
+    """LaTeX fragments in HTML or plain text, ignoring <pre>, <code>, <script> and <style>."""
+    text = re.sub(r"<(pre|code|script|style)\b[^>]*>.*?</\1\s*>", "", markup, flags=re.S | re.I)
+    text = re.sub(r"<[^>]*>", "", text)
+    return [m.group(0)[:40] for m in TEX_RE.finditer(text)]
+
+
+NODE = shutil.which("node")
+
+
 def run_node(js_source, *args):
+    """(ok, output), or (None, reason) when Node.js is not installed."""
+    if not NODE:
+        return None, "Node.js is not installed (https://nodejs.org), so this check was skipped"
     with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
         f.write(js_source)
         tmp = f.name
     try:
-        r = subprocess.run(["node", *args, tmp], capture_output=True, text=True)
+        r = subprocess.run([NODE, *args, tmp], capture_output=True, text=True)
     finally:
         os.unlink(tmp)
     return r.returncode == 0, (r.stdout + r.stderr).strip()
@@ -187,15 +213,20 @@ def question_list(indexes, mcq=None, limit=6):
 def main(argv):
     paths = [a for a in argv if not a.startswith("--")]
     strict = "--strict" in argv
-    if len(paths) != 1:
-        print(__doc__.strip().split("\n\n")[1])
+    unknown = [a for a in argv if a.startswith("--") and a != "--strict"]
+    if len(paths) != 1 or unknown:
+        print((f"unknown option {unknown[0]}\n" if unknown else "") + __doc__.strip().split("\n\n")[1])
         return 2
     target = paths[0]
     base = os.path.dirname(os.path.abspath(target))
-    with open(target, encoding="utf-8") as f:
-        html = f.read()
+    try:
+        with open(target, encoding="utf-8") as f:
+            html = f.read()
+    except OSError as e:
+        print(f"VALIDATE FAILED\n  cannot read {target}: {e.strerror}")
+        return 1
 
-    failures, warnings = [], []
+    failures, warnings, skipped = [], [], []
 
     def check(label, ok, detail=""):
         print(("  ✓ " if ok else "  ✗ ") + label + (f"  ({detail})" if detail else ""))
@@ -206,9 +237,9 @@ def main(argv):
     scripts = re.findall(r"<script>(.*?)</script>", html, re.S)
     script = "\n".join(scripts)
     visible = re.sub(r"<script>.*?</script>", "", html, flags=re.S)
-    ids = set(re.findall(r'\bid="([\w-]+)"', html))
+    ids = set(re.findall(r"""\bid\s*=\s*["']([^"'\s]+)["']""", html))
 
-    anchors = sorted(set(re.findall(r'href="#([\w-]+)"', html)))
+    anchors = sorted(set(htmllib.unescape(a) for a in re.findall(r"""\bhref\s*=\s*["']#([^"'\s]+)["']""", html)))
     broken = [a for a in anchors if a not in ids]
     check("anchors resolve", not broken, str(broken) if broken else f"{len(anchors)} anchors")
 
@@ -233,9 +264,14 @@ def main(argv):
     syntax_errors = []
     for i, src in enumerate(scripts):
         ok, out = run_node(src, "--check")
+        if ok is None:
+            skipped.append("scripts parse (node --check)")
+            print(f"  - scripts parse (node --check): {out}")
+            break
         if not ok:
             syntax_errors.append(f"script {i + 1}: " + out.splitlines()[-1][:160] if out else f"script {i + 1}")
-    check("scripts parse (node --check)", not syntax_errors, "; ".join(syntax_errors))
+    else:
+        check("scripts parse (node --check)", not syntax_errors, "; ".join(syntax_errors))
 
     print("--- offline ---")
     data = {name: extract_array(script, name) for name in ("flashcards", "mcqData", "termLexicon")}
@@ -263,12 +299,17 @@ def main(argv):
               + " (images are embedded unless config.embed_images is false)")
 
     print("--- content ---")
-    tex = re.findall(r"\$[^$\n]{1,80}\$", visible)
-    tex += re.findall(r"\\(?:frac|sqrt|alpha|beta|Delta|sigma|times|cdot|leq|geq|neq|rightarrow)\b", visible)
+    tex = raw_tex(visible)
     check("no raw LaTeX in visible text", not tex, str(tex[:3]) if tex else "")
 
-    data_text = json.dumps({k: v for k, v in data.items() if v}, ensure_ascii=False)
-    data_tex = re.findall(r"\\\\(?:frac|sqrt|alpha|beta|Delta|sigma|times|cdot|leq|geq|neq|rightarrow)\b", data_text)
+    data_tex = []
+    for name, fields in PROSE_FIELDS.items():
+        for item in data[name] or []:
+            for field in fields:
+                values = item.get(field) if isinstance(item.get(field), list) else [item.get(field)]
+                # an option with a line break is shown as code
+                data_tex += [t for v in values if isinstance(v, str) and not (field == "opts" and "\n" in v)
+                             for t in raw_tex(v)]
     check("no raw LaTeX in data", not data_tex, str(data_tex[:3]) if data_tex else "")
 
     lexicon = data["termLexicon"]
@@ -296,11 +337,15 @@ def main(argv):
                  + "console.log(JSON.stringify({hits: texts.length - texts.filter(t => !lookupTerm(t)).length,"
                  + " total: texts.length, miss}));\n")
         ok, out = run_node(audit)
-        result = json.loads(out) if ok else {"miss": [out[:200]], "hits": 0, "total": 0}
-        check("English terms have term cards", ok and not result["miss"],
-              f"{result['hits']} terms have cards" if not result["miss"]
-              else "no card for: " + ", ".join(result["miss"][:8])
-              + " (add a termLexicon key or a line in lexicon_allowlist.txt)")
+        if ok is None:
+            skipped.append("English terms have term cards")
+            print(f"  - English terms have term cards: {out}")
+        else:
+            result = json.loads(out) if ok else {"miss": [out[:200]], "hits": 0, "total": 0}
+            check("English terms have term cards", ok and not result["miss"],
+                  f"{result['hits']} terms have cards" if not result["miss"]
+                  else "no card for: " + ", ".join(result["miss"][:8])
+                  + " (add a termLexicon key or a line in lexicon_allowlist.txt)")
     else:
         print("  - term-card audit skipped (no termLexicon)")
 
@@ -314,8 +359,10 @@ def main(argv):
     if strict and warnings:
         failures.append("teaching-quality lint (--strict)")
 
+    notes = ([f"{len(warnings)} warning(s)"] if warnings else []) \
+        + ([f"{len(skipped)} check(s) skipped: Node.js not found"] if skipped else [])
     print("\n" + (f"VALIDATE FAILED: {len(failures)} check(s)" if failures else
-                  "VALIDATE OK" + (f" with {len(warnings)} warning(s)" if warnings else "")))
+                  "VALIDATE OK" + (f" with {', '.join(notes)}" if notes else "")))
     return 1 if failures else 0
 
 

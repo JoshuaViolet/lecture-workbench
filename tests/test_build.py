@@ -197,3 +197,8 @@ def test_config_values_are_never_read_as_placeholders(make_subject):
 def test_build_reports_the_guide_size(make_subject, capsys):
     assert build_guide.main([str(make_subject())]) == 0
     assert re.search(r"BUILD OK .* -> Binary_Search_Demo\.html \(\d+ KB\)", capsys.readouterr().out)
+
+
+def test_unknown_options_are_rejected(make_subject, capsys):
+    assert build_guide.main([str(make_subject()), "--validte"]) == 2
+    assert "unknown option --validte" in capsys.readouterr().out

@@ -408,6 +408,10 @@ def find_subject_dirs(subjects_root):
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     paths = [a for a in argv if not a.startswith("--")]
+    unknown = [a for a in argv if a.startswith("--") and a not in ("--all", "--validate", "--strict")]
+    if unknown:
+        print(f"unknown option {unknown[0]}\n" + __doc__.strip().split("\n\n")[1])
+        return 2
     if "--all" in argv:
         subjects = find_subject_dirs(os.path.join(ROOT, "subjects"))
         if not subjects:
