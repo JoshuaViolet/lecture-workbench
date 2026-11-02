@@ -66,7 +66,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/pytest
 ```
 
-发版：先开一个 PR，把 [CHANGELOG.md](CHANGELOG.md) 里的 `## Unreleased` 改成新版本号（如 `## 0.4.0`），并更新两份 README 的状态行；合并后给合并提交打标签并推送（`git tag v0.4.0 <合并提交> && git push origin v0.4.0`）。Release workflow 会自动发布 GitHub Release，说明就是 CHANGELOG 里该版本那一节；CHANGELOG 里没有对应版本的标签不会发布任何东西。
+发版：先开一个 PR，把 [CHANGELOG.md](CHANGELOG.md) 里的 `## Unreleased` 改成新版本号（如 `## 0.4.0`），并更新两份 README 的状态行；合并后启动 Release workflow，两种方式任选：不用 git、手机上也行的，在 **Actions → Release → Run workflow** 里选 `main`、填版本号（如 `0.4.0`），它会给 `main` 的最新提交打标签；或者给合并提交打标签并推送（`git tag v0.4.0 <合并提交> && git push origin v0.4.0`）。workflow 会自动发布 GitHub Release，说明就是 CHANGELOG 里该版本那一节；CHANGELOG 里没有对应版本的不会发布任何东西。在 Releases 页面手动发布的版本，workflow 会原样保留、不再报错。
 
 ## 许可证
 

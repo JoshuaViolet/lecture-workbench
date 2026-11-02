@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- The Release workflow can be started from the Actions page (**Run workflow** on `main`, with the version), so a release needs no git and can be made from a phone. It tags the head of `main` and publishes that version's changelog section.
+
+### Changed
+- CI, the Pages deploy and the Release workflow use the versions of GitHub's own actions that run on Node 24 (checkout v7, setup-python v7, setup-node v7, configure-pages v6, upload-pages-artifact v5, deploy-pages v5), so runs no longer warn that Node 20 is deprecated.
+
+### Fixed
+- Publishing a release by hand on the Releases page made the Release workflow fail and send a failure email: the release's new tag started the workflow, which then found the release already there. The workflow now leaves an existing release as it is.
+
 ## 0.3.0
 
 ### Added
