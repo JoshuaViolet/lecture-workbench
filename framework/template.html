@@ -92,7 +92,7 @@
         </div>
 
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="{{SEARCH_PLACEHOLDER}}" onkeyup="filterContent()">
+            <input type="text" id="searchInput" placeholder="{{SEARCH_PLACEHOLDER}}" oninput="filterContent()">
         </div>
 
         <nav>
@@ -117,7 +117,7 @@
         <!-- @@ZONE:HEADER@@ --><!-- @@ZONE:CONTENT@@ --></main>
 
     <!-- Toast Notification -->
-    <div id="toast-msg"></div>
+    <div id="toast-msg" role="status" aria-live="polite"></div>
 
     <!-- Lightbox Modal -->
     <div id="lightbox-modal" onclick="closeLightbox(event)">

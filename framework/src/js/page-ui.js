@@ -2,7 +2,7 @@
 window.onscroll = function() {
     let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
     let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    let scrolled = (winScroll / height) * 100;
+    let scrolled = height > 0 ? Math.min(100, (winScroll / height) * 100) : 0;
     document.getElementById("progress-bar").style.width = scrolled + "%";
 };
 
@@ -57,7 +57,7 @@ document.addEventListener("keydown", function(e) {
 
 // Search Filter
 function filterContent() {
-    let input = document.getElementById("searchInput").value.toLowerCase();
+    let input = document.getElementById("searchInput").value.trim().toLowerCase();
     let links = document.querySelectorAll("#navList li");
     links.forEach(li => {
         let text = li.textContent.toLowerCase();

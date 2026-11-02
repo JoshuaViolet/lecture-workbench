@@ -34,6 +34,10 @@
     h2, h3 { break-after: avoid; }
     img { max-width: 100% !important; }
     .mcq-code { white-space: pre-wrap; overflow: visible; }
-    /* 高亮省墨：底色改下划线 */
-    .user-hl { background: none; border-bottom: 1px solid #999999; }
+    /* 高亮省墨：底色改下划线（压过屏幕样式里的 !important，暗色主题下也一样） */
+    .user-hl, [data-theme] .user-hl {
+        background: none !important;
+        color: inherit !important;
+        border-bottom: 1px solid #999999;
+    }
 }

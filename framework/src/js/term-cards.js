@@ -41,14 +41,22 @@ function lookupTerm(rawText) {
     return null;
 }
 
+// ipa, chunks, parts and hook are optional: a row without a value is hidden, not shown empty
+function setTermField(id, value, asHtml) {
+    const el = document.getElementById(id);
+    if (asHtml) el.innerHTML = value || "";
+    else el.textContent = value || "";
+    (el.closest(".tc-row") || el).style.display = value ? "" : "none";
+}
+
 function showTermCard(entry, anchorEl) {
     currentTermEntry = entry;
     const card = document.getElementById("term-card");
     document.getElementById("tc-term").textContent = entry.term;
-    document.getElementById("tc-ipa").textContent = entry.ipa;
-    document.getElementById("tc-chunks").textContent = entry.chunks;
-    document.getElementById("tc-parts").innerHTML = entry.parts;
-    document.getElementById("tc-hook").textContent = entry.hook;
+    setTermField("tc-ipa", entry.ipa);
+    setTermField("tc-chunks", entry.chunks);
+    setTermField("tc-parts", entry.parts, true);
+    setTermField("tc-hook", entry.hook);
     card.style.display = "block";
     const rect = anchorEl.getBoundingClientRect();
     const cardH = card.offsetHeight;
@@ -79,9 +87,23 @@ function speakCurrentTerm() {
     window.speechSynthesis.cancel();
     const sayText = currentTermEntry.term.split("(")[0].replace(/\//g, " ").trim();
     const u = new SpeechSynthesisUtterance(sayText);
-    u.lang = "en-AU";
+    const voice = englishVoice();
+    if (voice) u.voice = voice;
+    u.lang = voice ? voice.lang : "en-AU";
     u.rate = 0.92;
     window.speechSynthesis.speak(u);
+}
+
+// An installed English voice, Australian first as before, then British, American, any English.
+// Without one, a browser falls back to its default voice, which may not speak English at all.
+function englishVoice() {
+    const voices = window.speechSynthesis.getVoices();
+    const lang = v => (v.lang || "").replace("_", "-").toLowerCase();
+    for (const want of ["en-au", "en-gb", "en-us"]) {
+        const v = voices.find(x => lang(x) === want);
+        if (v) return v;
+    }
+    return voices.find(x => lang(x).startsWith("en")) || null;
 }
 
 function initTermCards() {

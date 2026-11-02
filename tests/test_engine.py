@@ -116,3 +116,58 @@ def test_code_field_and_multiline_options_keep_their_layout(page):
 def test_demo_questions_without_code_have_no_code_block(page):
     without = page.evaluate("mcqData.filter(m => !m.code).length")
     assert page.locator(".mcq-card:not(:has(.mcq-code))").count() == without
+
+
+def test_term_card_hides_fields_a_term_does_not_have(page):
+    page.evaluate("termLexicon[0] = {keys: ['binary search'], term: 'Binary search'}; buildLexiconIndex();"
+                  "showTermCard(termLexicon[0], document.querySelector('#main-content .lexi'))")
+    card = page.locator("#term-card")
+    assert card.is_visible() and "undefined" not in card.inner_text()
+    assert card.locator(".tc-row:visible, #tc-hook:visible").count() == 0
+    page.evaluate("showTermCard({term: 'T', ipa: '/t/', parts: 'from <b>x</b>', hook: 'h'},"
+                  " document.querySelector('#main-content .lexi'))")
+    assert card.locator(".tc-row:visible").count() == 2 and card.locator("#tc-parts b").inner_text() == "x"
+
+
+def test_reading_aloud_picks_an_installed_english_voice(page):
+    pick = """voices => { speechSynthesis.getVoices = () => voices; const v = englishVoice(); return v && v.name; }"""
+    assert page.evaluate(pick, [{"lang": "zh-CN", "name": "Tingting"}, {"lang": "en_US", "name": "Samantha"},
+                                {"lang": "en-GB", "name": "Daniel"}]) == "Daniel"
+    assert page.evaluate(pick, [{"lang": "zh-CN", "name": "Tingting"}, {"lang": "en-IN", "name": "Rishi"}]) == "Rishi"
+    assert page.evaluate(pick, [{"lang": "zh-CN", "name": "Tingting"}]) is None
+
+
+def test_sidebar_shortcut_leaves_browser_shortcuts_and_typing_alone(page):
+    collapsed = "document.body.classList.contains('sidebar-collapsed')"
+    for key in ("Control+BracketLeft", "Meta+BracketLeft", "Alt+BracketRight"):
+        page.keyboard.press(key)
+        assert page.evaluate(collapsed) is False, key
+    page.focus("#searchInput")
+    page.keyboard.press("BracketLeft")
+    assert page.evaluate(collapsed) is False
+    page.locator("#bs-overview h2").click()
+    page.keyboard.press("BracketLeft")
+    assert page.evaluate(collapsed) is True
+
+
+def test_contents_filter_follows_any_input(page):
+    page.fill("#searchInput", "抽认")   # no key events, as when pasting
+    visible = page.locator("#navList li:visible")
+    assert visible.count() == 1 and "抽认卡" in visible.inner_text()
+    page.fill("#searchInput", "")
+    assert page.locator("#navList li:visible").count() == page.locator("#navList li").count()
+
+
+def test_highlights_print_as_underlines_in_both_themes(page):
+    page.evaluate("""() => {
+        const p = [...document.querySelectorAll('#main-content p')].find(p => p.textContent.includes('判断：'));
+        const r = document.createRange(); r.selectNodeContents(p.querySelector('strong'));
+        getSelection().removeAllRanges(); getSelection().addRange(r);
+    }""")
+    page.locator("#text-selection-toolbar").wait_for(state="visible")
+    page.click("#add-hl-btn")
+    page.emulate_media(media="print")
+    background = "document.querySelector('mark.user-hl') && getComputedStyle(document.querySelector('mark.user-hl')).backgroundColor"
+    assert page.evaluate(background) == "rgba(0, 0, 0, 0)"
+    page.evaluate("document.documentElement.setAttribute('data-theme', 'dark')")
+    assert page.evaluate(background) == "rgba(0, 0, 0, 0)"
