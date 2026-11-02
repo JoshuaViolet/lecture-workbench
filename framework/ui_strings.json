@@ -2,6 +2,7 @@
   "zh": {
     "html_lang": "zh-CN",
     "search_placeholder": "🔍 搜索目录…",
+    "noscript": "⚠️ 这里没有运行页面脚本（有些邮件和文件预览不运行脚本），所以高亮、批注、术语卡、抽认卡和选择题都用不了，理解检查的答案已直接展开。把文件保存到本机，再用浏览器（Chrome、Edge、Safari、Firefox）打开，就能正常使用。",
     "hl_add": "🖍️ 荧光高亮",
     "hl_add_title": "添加黄色荧光高亮",
     "note_add": "📝 批注",
@@ -92,6 +93,7 @@
   "en": {
     "html_lang": "en",
     "search_placeholder": "🔍 Search contents…",
+    "noscript": "⚠️ Scripts are not running here (some mail and file previews don't run them), so highlights, notes, term cards, flashcards and questions are unavailable; the answers to the inline checks are shown. Save the file and open it in a browser such as Chrome, Edge, Safari or Firefox to use everything.",
     "hl_add": "🖍️ Highlight",
     "hl_add_title": "Highlight the selected text in yellow",
     "note_add": "📝 Note",

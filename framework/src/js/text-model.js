@@ -46,6 +46,7 @@ function anchorFromRange(range) {
         block: block,
         clipped: clipped,
         anchor: {
+            v: BLOCK_VERSION,
             cIdx: getAllTextContainers().indexOf(block),
             start: start,
             end: end,
@@ -56,10 +57,10 @@ function anchorFromRange(range) {
     };
 }
 
-// Find where a stored anchor is now. `texts` caches blockText for each block.
-function locateAnchor(item, blocks, texts) {
+// Find where a stored anchor is now. `texts` caches blockText for each block; `home` is the
+// index in `blocks` of the block the record was made in (-1 when unknown).
+function locateAnchor(item, blocks, texts, home) {
     if (!item || typeof item.text !== "string" || !item.text) return null;
-    const home = Number.isInteger(item.cIdx) ? item.cIdx : -1;
     if (blocks[home] && Number.isInteger(item.start) && Number.isInteger(item.end)
         && texts[home].slice(item.start, item.end) === item.text) {
         return { block: blocks[home], start: item.start, end: item.end };
@@ -116,8 +117,19 @@ function restoreAnnotations(items, attr, wrap) {
     if (!valid.length) return;
     const blocks = getAllTextContainers();
     const texts = blocks.map(blockText);   // wrapping never changes the text, so this stays valid
+    const position = new Map(blocks.map((b, i) => [b, i]));
+    const older = {};   // block lists of earlier versions, built when a record needs one
+    // where the record's cIdx points in today's list: its block is looked up in the list of
+    // the version it was made with (an unknown, newer version is found by its text alone)
+    const homeOf = item => {
+        const v = item.v === undefined ? 1 : item.v;
+        if (!Number.isInteger(item.cIdx) || !BLOCK_SELECTORS[v]) return -1;
+        if (v === BLOCK_VERSION) return item.cIdx;
+        const block = (older[v] = older[v] || getAllTextContainers(v))[item.cIdx];
+        return position.has(block) ? position.get(block) : -1;
+    };
     valid.forEach(item => {
-        const at = locateAnchor(item, blocks, texts);
+        const at = locateAnchor(item, blocks, texts, homeOf(item));
         if (at) wrap(at.block, at.start, at.end, item.id);
     });
 }

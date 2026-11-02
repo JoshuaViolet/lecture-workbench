@@ -250,4 +250,5 @@
     font-weight: 600;
     z-index: 3000;
     box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    pointer-events: none;   /* a message only: clicks reach what is under it */
 }

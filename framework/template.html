@@ -49,6 +49,19 @@
         /* @@INCLUDE:css/teaching.css@@ */
 
 </style>
+    <noscript>
+        <style>
+            /* Where scripts do not run (some mail and file previews): say so, show what reads
+               without them (the answers of the inline checks), and hide controls that do nothing. */
+            .noscript-note {
+                margin-bottom: 20px; padding: 14px 18px; border-radius: 10px;
+                border-left: 4px solid var(--accent); background: var(--accent-bg); color: var(--text-main);
+            }
+            .quiz-a { display: block !important; }
+            .quiz-toggle, #sidebar-toggle-pill, #theme-select, .sidebar-collapse-btn, .search-box,
+            .sidebar-footer, .flashcard-wrapper, #mcq-app { display: none !important; }
+        </style>
+    </noscript>
 </head>
 <body>
 
@@ -130,7 +143,8 @@
 
     <!-- Main Content Area -->
     <main id="main-content">
-        
+        <noscript><p class="noscript-note">{{UI:noscript}}</p></noscript>
+
         <!-- Header Banner -->
         <!-- @@ZONE:HEADER@@ --><!-- @@ZONE:CONTENT@@ --></main>
 
