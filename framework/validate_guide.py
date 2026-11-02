@@ -66,6 +66,7 @@ LOAD_ATTR_RE = re.compile(r"""(?<![\w-])(src|srcset|poster|data|href|style)\s*=\
 HREF_LOADS = {"link", "image", "use", "feimage"}
 CSS_REF_RE = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s]+))\s*\)|@import\s+(?:"([^"]*)"|'([^']*)')""", re.I)
 SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+DRIVE_RE = re.compile(r"^[A-Za-z]:[\\/]")   # C:\slides\s1.png is a Windows path, not a URL scheme
 
 
 def css_refs(css):
@@ -99,6 +100,8 @@ def classify_url(url, base):
     url = url.strip()
     if not url or url.startswith("#") or url.lower().startswith(("data:", "blob:", "javascript:", "about:")):
         return None
+    if DRIVE_RE.match(url):
+        return ("local", os.path.normpath(url))
     if url.startswith("//") or (SCHEME_RE.match(url) and not url.lower().startswith("file:")):
         return ("remote", url)
     if url.lower().startswith("file:"):
@@ -125,6 +128,13 @@ def raw_tex(markup):
 
 
 NODE = shutil.which("node")
+
+
+def relative(path, base):
+    try:
+        return os.path.relpath(path, base)
+    except ValueError:   # another drive on Windows
+        return path
 
 
 def run_node(js_source, *args):
@@ -290,12 +300,12 @@ def main(argv):
           "breaks offline: " + ", ".join(u[:80] for u in remote[:5])
           + " (link to it with <a href>, or save the file locally so the build embeds it)" if remote else "")
     check("files it points to exist", not missing,
-          "missing: " + ", ".join(os.path.relpath(p, base) for p in missing[:5]) if missing
+          "missing: " + ", ".join(relative(p, base) for p in missing[:5]) if missing
           else (f"{embedded} embedded" if embedded else ""))
     beside = [p for p in local if p not in missing]
     if beside:
         print(f"  ! not a single file: keep {len(beside)} file(s) next to the guide: "
-              + ", ".join(os.path.relpath(p, base) for p in beside[:5]) + (", …" if len(beside) > 5 else "")
+              + ", ".join(relative(p, base) for p in beside[:5]) + (", …" if len(beside) > 5 else "")
               + " (images are embedded unless config.embed_images is false)")
 
     print("--- content ---")

@@ -74,6 +74,7 @@ IMG_TAG_RE = re.compile(r"""<img\b(?:[^>"']|"[^"]*"|'[^']*')*>""", re.I)
 SRC_ATTR_RE = re.compile(r"""(?<![\w-])(src\s*=\s*)(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))""", re.I)
 CSS_URL_RE = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s]+))\s*\)""", re.I)
 SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+DRIVE_RE = re.compile(r"^[A-Za-z]:[\\/]")   # C:\slides\s1.png is a Windows path, not a URL scheme
 # Above this size a guide still works, but phones open it slowly.
 LARGE_GUIDE_BYTES = 25 * 1024 * 1024
 
@@ -198,6 +199,8 @@ def local_path(ref, base_dir):
     ref = html.unescape(ref).strip()
     if not ref or ref.startswith(("#", "//")):
         return None
+    if DRIVE_RE.match(ref):
+        return os.path.normpath(ref)
     if SCHEME_RE.match(ref):
         return url2pathname(urlsplit(ref).path) if ref[:5].lower() == "file:" else None
     return os.path.normpath(os.path.join(base_dir, unquote(urlsplit(ref).path)))
