@@ -141,13 +141,15 @@ The suite has unit tests for the builder and validator, and Playwright tests tha
 ### Releasing
 
 1. Open a pull request that renames `## Unreleased` in [CHANGELOG.md](CHANGELOG.md) to the new version (`## 0.4.0`) and updates the status line in both READMEs.
-2. Once it is merged, tag the merge commit and push the tag:
+2. Once it is merged, start the Release workflow, either way:
+   - without git, from a phone too: **Actions → Release → Run workflow** on `main`, with the version (`0.4.0`). It tags the head of `main`;
+   - or tag the merge commit and push the tag:
 
-   ```bash
-   git tag v0.4.0 <merge commit> && git push origin v0.4.0
-   ```
+     ```bash
+     git tag v0.4.0 <merge commit> && git push origin v0.4.0
+     ```
 
-   The Release workflow publishes a GitHub release with that version's changelog section as its notes. A tag whose version has no section in the changelog publishes nothing.
+   The workflow publishes a GitHub release with that version's changelog section as its notes. A version with no section in the changelog publishes nothing. A release you publish by hand on the Releases page is left as it is.
 
 ## License
 
