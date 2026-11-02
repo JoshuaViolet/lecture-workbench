@@ -37,7 +37,7 @@ Only in `content.html`: explanation, evidence or derivation, figures, code, one 
 
 Keep out of the built page, in your own notes next to the subject: coverage tables, long citation lists, lists of numbers or samples you have not verified, generation logs. Never embed a coverage table or a source index in the guide.
 
-A figure is an image file in the subject's `assets/` folder, in a `<figure>` with `alt` text and a `<figcaption>` that carries its slide reference; the build embeds it in the page. Never hotlink an image or load a script, stylesheet or font from the web (MathJax, Google Fonts, a CDN): the guide must work offline, and the validator fails one that needs the network. Link to online material with `<a href>` instead.
+A figure is an image file in the subject's `assets/` folder, in a `<figure>` with `alt` text and a `<figcaption>` that carries its slide reference; the build embeds it in the page. Do not hotlink an image or load a script, stylesheet or font from the web (MathJax, Google Fonts, a CDN): the guide is meant to work offline, and the validator warns about anything that needs the network. Link to online material with `<a href>` instead.
 
 ## Scope
 

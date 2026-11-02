@@ -8,9 +8,10 @@ Usage:
 Checks (any failure exits 1):
   structure   anchors resolve, getElementById targets exist, inline handlers are defined,
               tags are balanced, no unfilled placeholders, every <script> passes `node --check`
-  offline     nothing is loaded from the network (scripts, styles, fonts, images, frames);
-              any local file the page still points to exists (a warning says which files
-              must be kept next to the guide; built guides normally embed their images)
+  offline     every local file the page points to exists. Warnings only (also with --strict):
+              anything loaded from the network (scripts, styles, fonts, images, frames), which
+              will not show offline, and local files that must be kept next to the guide
+              (built guides normally embed their images)
   content     no raw LaTeX in prose or data (the page has no math renderer; code and money
               amounts such as "$5 to $10" are not LaTeX), every English term in span.en /
               <strong> has a term card (or is allow-listed)
@@ -237,6 +238,7 @@ def main(argv):
         return 1
 
     failures, warnings, skipped = [], [], []
+    offline_warnings = []   # reported, but never a failure
 
     def check(label, ok, detail=""):
         print(("  ✓ " if ok else "  ✗ ") + label + (f"  ({detail})" if detail else ""))
@@ -296,17 +298,27 @@ def main(argv):
     local = sorted({p for kind, p in found if kind == "local"})
     missing = [p for p in local if not os.path.isfile(p)]
     embedded = sum(1 for u in page_urls if u.strip().lower().startswith("data:"))
-    check("loads nothing from the network", not remote,
-          "breaks offline: " + ", ".join(u[:80] for u in remote[:5])
-          + " (link to it with <a href>, or save the file locally so the build embeds it)" if remote else "")
     check("files it points to exist", not missing,
           "missing: " + ", ".join(relative(p, base) for p in missing[:5]) if missing
           else (f"{embedded} embedded" if embedded else ""))
+
+    def listing(items):
+        return ", ".join(items[:5]) + (", …" if len(items) > 5 else "")
+    # The two below are warnings, not failures, even with --strict: the guide still opens and
+    # works; only these resources are missing when it is offline or copied on its own.
+    if remote:
+        offline_warnings.append(f"loads {len(remote)} resource(s) from the network, which will not show offline: "
+                                + listing([u[:80] for u in remote])
+                                + " (save the file locally so the build embeds it, or link to it with <a href>)")
+    else:
+        print("  ✓ loads nothing from the network")
     beside = [p for p in local if p not in missing]
     if beside:
-        print(f"  ! not a single file: keep {len(beside)} file(s) next to the guide: "
-              + ", ".join(relative(p, base) for p in beside[:5]) + (", …" if len(beside) > 5 else "")
-              + " (images are embedded unless config.embed_images is false)")
+        offline_warnings.append(f"not a single file: keep {len(beside)} file(s) next to the guide: "
+                                + listing([relative(p, base) for p in beside])
+                                + " (images are embedded unless config.embed_images is false)")
+    for w in offline_warnings:
+        print(f"  ! {w}")
 
     print("--- content ---")
     tex = raw_tex(visible)
@@ -369,7 +381,8 @@ def main(argv):
     if strict and warnings:
         failures.append("teaching-quality lint (--strict)")
 
-    notes = ([f"{len(warnings)} warning(s)"] if warnings else []) \
+    n_warnings = len(warnings) + len(offline_warnings)
+    notes = ([f"{n_warnings} warning(s)"] if n_warnings else []) \
         + ([f"{len(skipped)} check(s) skipped: Node.js not found"] if skipped else [])
     print("\n" + (f"VALIDATE FAILED: {len(failures)} check(s)" if failures else
                   "VALIDATE OK" + (f" with {', '.join(notes)}" if notes else "")))

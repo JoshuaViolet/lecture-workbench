@@ -4,7 +4,7 @@
 
 ### Added
 - Local images are embedded in the built page as `data:` URIs, so a guide with figures is still one file that works when copied on its own. A missing image fails the build; `"embed_images": false` keeps the links. The build reports each guide's size and warns above 25 MB.
-- An offline section in the validator: anything the page would load from the network (CDN script, web font, hotlinked image, iframe) fails, local files it points to must exist, and a guide that needs files beside it gets a warning.
+- An offline section in the validator: local files the page points to must exist; anything it would load from the network (CDN script, web font, hotlinked image, iframe) and files it needs beside it are reported as warnings, which `--strict` does not turn into failures.
 - Figure images open full size in the lightbox (click or Enter). The demo has a figure of its search trace.
 - Each question's last result is remembered in the browser; questions answered wrongly last time carry a badge, and a button narrows practice to them.
 - The contents list marks the section being read.

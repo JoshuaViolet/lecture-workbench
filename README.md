@@ -122,7 +122,7 @@ Coming from the older `data.js` format: `python3 framework/migrate_datajs.py sub
 | Check | Catches |
 |---|---|
 | structure | broken `#anchors`, `getElementById` targets that don't exist, undefined inline handlers, unbalanced tags, unfilled placeholders, script syntax errors |
-| offline | anything the page would load from the network (a CDN script, a web font, a hotlinked image, an iframe), and local files it points to that don't exist; a guide that needs files beside it gets a warning |
+| offline | local files the page points to that don't exist. Warnings, never failures: anything it would load from the network (a CDN script, a web font, a hotlinked image, an iframe), which won't show offline, and files the guide needs beside it |
 | content | raw LaTeX in prose or data (there is no math renderer; code and amounts such as "$5 to $10" are not taken for LaTeX), English terms with no term card |
 | teaching-quality lint | the correct option being the only longest one in more than 40% of questions, question-type tags in stems (`Mechanism: …`), explanations that name options by letter although options are shuffled, answers clustered on one letter in fixed-order questions, duplicate questions |
 

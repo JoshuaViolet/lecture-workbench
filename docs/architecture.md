@@ -42,7 +42,7 @@ A lesson refers to its images by relative path (`<img src="assets/s12.png">`), w
 
 Embedding costs about a third more bytes than the image files (base64). The build prints each guide's size and warns above 25 MB, which phones open slowly; a 30 MB test guide with 40 slides parses in about half a second in desktop Chromium. An image used twice is embedded twice.
 
-The validator checks the result from the other side: it lists every URL the page would load by itself (`src`, `srcset`, `poster`, `<object data>`, the `href` of `<link>` and SVG `<image>`/`<use>`, CSS `url()` and `@import`, including in the data's HTML) and fails on anything from the network or any local file that does not exist. An `<a href>` is a link, not a load, so linking to online material is fine.
+The validator checks the result from the other side: it lists every URL the page would load by itself (`src`, `srcset`, `poster`, `<object data>`, the `href` of `<link>` and SVG `<image>`/`<use>`, CSS `url()` and `@import`, including in the data's HTML) A local file that does not exist fails. Anything from the network is a warning, not a failure, also under `--strict`: the guide still opens and works, but those resources are missing offline, and authors sometimes accept that (an embedded video, say). The same goes for local files the guide needs beside it. An `<a href>` is a link, not a load, so linking to online material raises nothing.
 
 ## Runtime
 
