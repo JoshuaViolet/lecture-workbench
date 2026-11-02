@@ -6,24 +6,27 @@ window.onscroll = function() {
     document.getElementById("progress-bar").style.width = scrolled + "%";
 };
 
-// Theme Toggle
-function toggleTheme() {
-    const html = document.documentElement;
-    const btn = document.getElementById("theme-toggle-btn");
-    if (html.getAttribute("data-theme") === "dark") {
-        html.setAttribute("data-theme", "light");
-        btn.textContent = UI.theme_dark;
-        lsSet(LS.theme, "light");
-    } else {
-        html.setAttribute("data-theme", "dark");
-        btn.textContent = UI.theme_light;
-        lsSet(LS.theme, "dark");
-    }
+// Theme: "system" (the default) follows the device's light/dark setting, also when it changes
+// while the page is open; "light" and "dark" are the reader's own choice, kept for this guide.
+// The script in <head> has already applied it once, before the first paint.
+const systemDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+const savedTheme = lsGet(LS.theme);
+let themeChoice = savedTheme === "light" || savedTheme === "dark" ? savedTheme : "system";
+
+function applyTheme() {
+    const dark = themeChoice === "dark" || (themeChoice === "system" && !!systemDark && systemDark.matches);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    document.getElementById("theme-select").value = themeChoice;
 }
-// the theme itself was set in <head>; the button offers the other one
-if (document.documentElement.getAttribute("data-theme") === "dark") {
-    document.getElementById("theme-toggle-btn").textContent = UI.theme_light;
+function setThemeChoice(choice) {
+    themeChoice = choice === "light" || choice === "dark" ? choice : "system";
+    if (themeChoice === "system") lsRemove(LS.theme);
+    else lsSet(LS.theme, themeChoice);   // if storage is unavailable, the choice lasts until reload
+    applyTheme();
 }
+if (systemDark && systemDark.addEventListener) systemDark.addEventListener("change", applyTheme);
+else if (systemDark && systemDark.addListener) systemDark.addListener(applyTheme);   // Safari before 14
+applyTheme();
 
 // Lightbox: clicking an image in a <figure> shows it full size, with its caption
 function openLightbox(src, caption) {

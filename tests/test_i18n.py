@@ -98,7 +98,7 @@ def test_english_page_shows_no_chinese_interface_text(english_page):
     page = english_page
     page.click("#flashcard-element")
     page.click(".quiz-toggle >> nth=0")
-    page.click("#theme-toggle-btn")
+    page.select_option("#theme-select", "dark")
     page.click("#sidebar-toggle-pill")
     page.evaluate("buildPrintSheet()")
     texts = page.evaluate("""() => {

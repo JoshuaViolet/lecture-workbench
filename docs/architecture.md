@@ -54,10 +54,10 @@ The engine is plain DOM code run once at the end of `<body>`:
 | annotations | highlights and margin notes (below) |
 | practice | flashcards, MCQ with per-render option shuffling, an optional code block and remembered results, collapsible inline checks |
 | term cards | builds an index from `termLexicon` keys and attaches hover cards to `span.en` and `<strong>` text that matches |
-| layout | sidebar collapse, dark mode, contents marker, progress bar, lightbox for figure images, a scrolling box around each table |
+| layout | sidebar collapse, colour theme, contents marker, progress bar, lightbox for figure images, a scrolling box around each table |
 | print | `beforeprint` builds a self-test appendix and forces lazy images to load |
 
-The theme is the one exception to "run once at the end of `<body>`": a few lines in `<head>` apply the saved theme, or the system's light/dark setting when the reader has not chosen, before the first paint. Applying it at the end of `<body>` showed dark-mode readers a white page first.
+The theme is a setting with three values: follow the system (the default; nothing is stored), light or dark (stored under `<DOC_ID>_theme`). It is the one exception to "run once at the end of `<body>`": a few lines in `<head>` apply it before the first paint, because applying it at the end of `<body>` showed dark-mode readers a white page first. The main script then keeps following the system's `prefers-color-scheme` while the setting is "system", so a device that switches to dark in the evening takes an open guide with it.
 
 ### Anchoring annotations
 

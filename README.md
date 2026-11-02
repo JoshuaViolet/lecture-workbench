@@ -19,7 +19,7 @@ Turn lecture notes into a **single, self-contained HTML study guide** that works
 - **Figures** from local image files, embedded at build time; click one to see it full size.
 - **Teaching components** for structuring a lesson: chapter spine, evidence / limitation / misconception / transfer blocks, study cards.
 - **Print mode** that forces a light theme and appends a self-test sheet with the answer key.
-- Dark mode (follows the system until you choose), a contents list that marks the section you're reading, layouts for phones (wide tables scroll sideways), reading progress, keyboard support, `prefers-reduced-motion`.
+- A colour theme that follows the system by default, including when it switches while the guide is open, or is set to light or dark in the sidebar; a contents list that marks the section you're reading, layouts for phones (wide tables scroll sideways), reading progress, keyboard support, `prefers-reduced-motion`.
 
 ## Quick start
 

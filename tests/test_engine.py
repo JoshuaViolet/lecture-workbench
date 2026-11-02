@@ -227,13 +227,26 @@ def test_the_contents_mark_the_section_being_read(page):
     page.wait_for_function("document.querySelector('#navList a.active').textContent.includes('1.6')")
 
 
-def test_dark_system_preference_is_used_until_the_reader_chooses(browser, demo_guide):
+def test_theme_follows_the_system_unless_the_reader_picks_one(browser, demo_guide):
     context = browser.new_context(color_scheme="dark")
     page = context.new_page()
     page.goto("file://" + demo_guide)
     theme = "document.documentElement.getAttribute('data-theme')"
-    assert page.evaluate(theme) == "dark" and page.inner_text("#theme-toggle-btn") == "☀️ 亮色"
-    page.click("#theme-toggle-btn")
+    picker = page.locator("#theme-select")
+    assert page.evaluate(theme) == "dark" and picker.input_value() == "system"
+    page.emulate_media(color_scheme="light")          # the system switches while the page is open
+    page.wait_for_function(theme + " === 'light'")
+
+    picker.select_option("dark")                      # the reader's own choice wins over the system
     page.reload()
+    assert page.evaluate(theme) == "dark" and picker.input_value() == "dark"
+    page.emulate_media(color_scheme="dark")
+    page.emulate_media(color_scheme="light")
+    assert page.evaluate(theme) == "dark"
+
+    picker.select_option("system")                    # and following the system can be chosen again
     assert page.evaluate(theme) == "light"
+    assert page.evaluate("localStorage.getItem(LS.theme)") is None
+    page.reload()
+    assert page.evaluate(theme) == "light" and picker.input_value() == "system"
     context.close()

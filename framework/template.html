@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{TITLE}}</title>
     <script>
-        // Set the theme before anything is drawn: the reader's saved choice (the key is LS.theme
-        // below), else the system's. The main script runs at the end of <body>, too late to avoid
-        // a white flash.
+        // Set the theme before anything is drawn: the reader's own choice (the key is LS.theme
+        // below), else the system's light or dark setting. The main script, which also follows
+        // the system when that setting changes, runs at the end of <body>: too late to avoid a
+        // white flash.
         (function () {
             var theme = null;
             try { theme = localStorage.getItem({{DOC_ID_JSON}} + "_theme"); } catch (e) { /* storage blocked */ }
@@ -97,7 +98,11 @@
             <h2>
                 <span>{{SIDEBAR_TITLE}}</span>
                 <div style="display: flex; gap: 6px; align-items: center;">
-                    <button class="theme-btn" onclick="toggleTheme()" id="theme-toggle-btn">{{UI:theme_dark}}</button>
+                    <select class="theme-btn" id="theme-select" onchange="setThemeChoice(this.value)" title="{{UI:theme_title}}" aria-label="{{UI:theme_title}}">
+                        <option value="system">{{UI:theme_system}}</option>
+                        <option value="light">{{UI:theme_light}}</option>
+                        <option value="dark">{{UI:theme_dark}}</option>
+                    </select>
                     <button class="sidebar-collapse-btn" onclick="toggleSidebar(false)" title="{{UI:sidebar_collapse_title}}">◀</button>
                 </div>
             </h2>

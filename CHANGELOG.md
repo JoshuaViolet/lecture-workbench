@@ -13,7 +13,7 @@
 
 ### Changed
 - Importing a backup asks whether to **merge** it with what the browser already has (nothing is deleted, the newer edit of a note wins, and the page says when a backup holds nothing new) or **replace** it, showing how many highlights and notes each side has. A browser with nothing yet is not asked. Replacing keeps one copy of what it replaced under `<key>_before_import`. A backup from another guide is flagged in the same dialog instead of a separate confirm.
-- Dark mode follows the system setting until the reader picks a theme, and is applied before the first paint.
+- The dark-mode button is now a theme setting in the sidebar: **follow the system** (the default, also when the system switches while the guide is open), light or dark. A reader who picked light or dark can go back to following the system. The theme is applied before the first paint, so dark-mode readers no longer see a white page first.
 - On phones, tables scroll sideways inside their own box and the page uses less padding.
 - Reading a term aloud picks an installed English voice (Australian first, as before) instead of leaving a non-English default voice to read it.
 - The Markdown export lists notes and highlights in reading order and dates them in the guide's language.
